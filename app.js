@@ -1,19 +1,25 @@
 const API = "http://localhost:8080/v1/api";
 let $viewer = document.querySelector("#viewer");
 let $message = document.querySelector("#message");
+let $token;
 
 function init () {
     let $template = document.querySelector("#view_0");
     $viewer.innerHTML = $template.innerHTML;
 
     let $sign_up_button = document.querySelector("#sign_up_button");
-    $sign_up_button.addEventListener("click", sing_up_view);
+    $sign_up_button.addEventListener("click", sign_up_view);
 
-    //let $sign_in_button = document.querySelector("#sign_in_button");
-    //$sign_in_button.addEventListener("click", sing_in_view());
+    let $sign_in_button = document.querySelector("#sign_in_button");
+    $sign_in_button.addEventListener("click", sign_in_view);
 }
 
-function sing_up_view () {
+function cancel () {
+    $message.innerText = "";
+    init();
+}
+
+function sign_up_view () {
     let $template = document.querySelector("#view_1");
     $viewer.innerHTML = $template.innerHTML;
 
@@ -21,11 +27,6 @@ function sing_up_view () {
     $sign_up.addEventListener("click", sign_up);
     let $cancel = document.querySelector("#cancel");
     $cancel.addEventListener("click", cancel);
-}
-
-function cancel () {
-    $message.innerText = "";
-    init();
 }
 
 function sign_up () {
@@ -72,6 +73,46 @@ function create_user (email, fname, lname, password, credit_card) {
     user.credit_card = credit_card;
     return user;
 }
+
+function sign_in_view () {
+    let $template = document.querySelector("#view_2");
+    $viewer.innerHTML = $template.innerHTML;
+
+    let $sign_in = document.querySelector("#sign_in");
+    $sign_in.addEventListener("click", sign_in);
+    let $cancel = document.querySelector("#cancel");
+    $cancel.addEventListener("click", cancel);
+}
+
+function sign_in () {
+    let email = document.querySelector("#email").value;
+    let password = document.querySelector("#password").value;
+    let user = create_user(email, "", "", password, "");
+
+    fetch (API + "/auth/login", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(user)
+    })
+    .then(r => {
+        if (r.ok) return r.json();
+        else {
+        console.log("Login falhou");
+        $message.innerText = "Algo deu errado. Tente novamente.";
+        }
+    })
+    .then(d => {
+        if (d != undefined) {
+            $message.innerText = "Login realizado";
+            setTimeout(_ => {
+                $message.innerText = "";
+            }, 2000);
+            console.log("Login realizado");
+            init();
+        }
+    });
+}
+
 init();
 
 //todo: o delete e apenas para testar o app, retirar depois
