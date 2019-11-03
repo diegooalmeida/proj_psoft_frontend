@@ -6,27 +6,37 @@
     <title>AJuDE</title>
 </head>
 <body>
-    <h1>Cadastro de usuários</h1>
+    <h1>AJuDE</h1>
+    <p>Aqui Juntos Doando Esperança</p>
+    <hr>
+    <p id="message"></p>
+    <hr>
+    <div id="viewer"></div>
+    <hr>
+    <footer>
+        Rodapé do site <br>
+        <button id="delete_button">Matar o bd</button>
+    </footer>
 
-    <hr>
-    <div>
-        <p id="message" type="text"></p>
-    </div>
-    <hr>
- 
-    <hr>
-        <div id="users_div"></div>
-    <hr>
+    <template id="view_0">
+    <p>É novo aqui?</p>
+    <button id="sign_up_button">Crie uma conta</button>
+    <p>Já possui uma conta?</p>
+    <button id="sign_in_button">Entrar</button>
+    </template>
 
-    <p>Email<br> <input id="email" type="text"></p>
-    <p>Primeiro nome<br> <input id="fname" type="text"></p>
-    <p>Último nome<br> <input id="lname" type="text"></p>
-    <p>Senha<br> <input id="password" type="text"></p>
-    <p>Cartão de crédito<br> <input id="credit_card" type="text"></p>
-    <button id="button">Cadastrar</button>
+    <template id="view_1">
+        <h2>Cadastro de usuários</h2>
+        
+        <p>Email<br> <input id="email" type="text"></p>
+        <p>Primeiro nome<br> <input id="fname" type="text"></p>
+        <p>Último nome<br> <input id="lname" type="text"></p>
+        <p>Senha<br> <input id="password" type="text"></p>
+        <p>Cartão de crédito<br> <input id="credit_card" type="text"></p>
 
-    <hr>
-    <button id="delete_button">Matar o bd</button>
-    
+        <button id="sign_up">Cadastrar-se</button>
+        <button id="cancel">Cancelar</button>
+    </template>
+
 </body>
 </html>
