@@ -116,7 +116,7 @@ function sign_in () {
                 $message.innerText = "";
             }, 2000);
             console.log("Login realizado");
-            logged_user();
+            logged_user_view();
         }
         
     });
@@ -131,8 +131,20 @@ function logged_user_view () {
 
     let $p = document.querySelector("#hello_message");
     let $user;
-    fetch(API + "/users/auth")
-    $p.innerText = "Olá " + 
+
+    let headers = new Headers();
+    headers.append("Authorization", "Bearer " + token);
+    fetch(API + "/users/auth", {
+        method:"GET",
+        headers: headers
+    })
+    .then(r => r.json())
+    .then(d => {
+        console.log("d");
+        $user = d;
+        $p.innerText = "Olá " + $user.fname + " " + $user.lname;
+        document.querySelector("#logged_user").innerText = "Usuário logado.";
+    });
 
 }
 
