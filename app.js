@@ -1,10 +1,25 @@
 const API = "http://localhost:8080/v1/api";
 let $viewer = document.querySelector("#viewer");
 let $message = document.querySelector("#message");
-let $token;
+let token = undefined;
+
+init();
+
+function create_user (email, fname, lname, password, credit_card) {
+    let user = {};
+    user.email = email;
+    user.fname = fname;
+    user.lname = lname;
+    user.password = password;
+    user.credit_card = credit_card;
+    return user;
+}
 
 function init () {
-    let $template = document.querySelector("#view_0");
+    if (token === undefined) document.querySelector("#logged_user").innerText = "Não tem ninguém logado";
+    else document.querySelector("#logged_user").innerText = "Usuário logado.";
+
+    let $template = document.querySelector("#home_view");
     $viewer.innerHTML = $template.innerHTML;
 
     let $sign_up_button = document.querySelector("#sign_up_button");
@@ -16,11 +31,12 @@ function init () {
 
 function cancel () {
     $message.innerText = "";
+    token = undefined;
     init();
 }
 
 function sign_up_view () {
-    let $template = document.querySelector("#view_1");
+    let $template = document.querySelector("#sign_up_view");
     $viewer.innerHTML = $template.innerHTML;
 
     let $sign_up = document.querySelector("#sign_up");
@@ -64,18 +80,8 @@ function sign_up () {
     });
 }
 
-function create_user (email, fname, lname, password, credit_card) {
-    let user = {};
-    user.email = email;
-    user.fname = fname;
-    user.lname = lname;
-    user.password = password;
-    user.credit_card = credit_card;
-    return user;
-}
-
 function sign_in_view () {
-    let $template = document.querySelector("#view_2");
+    let $template = document.querySelector("#sign_in_view");
     $viewer.innerHTML = $template.innerHTML;
 
     let $sign_in = document.querySelector("#sign_in");
@@ -95,25 +101,40 @@ function sign_in () {
         body: JSON.stringify(user)
     })
     .then(r => {
+        console.log(r);
         if (r.ok) return r.json();
         else {
-        console.log("Login falhou");
-        $message.innerText = "Algo deu errado. Tente novamente.";
+            if (r.status === 404) $message.innerText = "Usuário não encontrado.";
+            else $message.innerText = "Senha inválida.";
         }
     })
     .then(d => {
         if (d != undefined) {
+            token = d.token;
             $message.innerText = "Login realizado";
             setTimeout(_ => {
                 $message.innerText = "";
             }, 2000);
             console.log("Login realizado");
-            init();
+            logged_user();
         }
+        
     });
 }
 
-init();
+function logged_user_view () {
+    let $template = document.querySelector("#logged_user_view");
+    $viewer.innerHTML = $template.innerHTML;
+
+    let $button = document.querySelector("#logout_button");
+    $button.addEventListener("click", cancel);
+
+    let $p = document.querySelector("#hello_message");
+    let $user;
+    fetch(API + "/users/auth")
+    $p.innerText = "Olá " + 
+
+}
 
 //todo: o delete e apenas para testar o app, retirar depois
 let $delete_button = document.querySelector("#delete_button");
