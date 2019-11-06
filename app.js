@@ -1,6 +1,6 @@
-const API = "http://localhost:8080/v1/api";
+const API = "http://localhost:8080/api";
 let $viewer = document.querySelector("#viewer");
-let $message = document.querySelector("#message");
+let $message_div = document.querySelector("#message_div");
 let token = undefined;
 
 init();
@@ -16,9 +16,6 @@ function create_user (email, fname, lname, password, credit_card) {
 }
 
 function init () {
-    if (token === undefined) document.querySelector("#logged_user").innerText = "Não tem ninguém logado";
-    else document.querySelector("#logged_user").innerText = "Usuário logado.";
-
     let $template = document.querySelector("#home_view");
     $viewer.innerHTML = $template.innerHTML;
 
@@ -30,7 +27,7 @@ function init () {
 }
 
 function cancel () {
-    $message.innerText = "";
+    $message_div.innerHTML = "";
     token = undefined;
     init();
 }
@@ -65,14 +62,16 @@ function sign_up () {
         if (r.ok) return r.json();
         else {
             console.log("Email já cadastrado");
-            $message.innerText = "Email já cadastrado. Tente novamente.";
+            $message_div.innerText = "Email já cadastrado, tento novamente";
+            $message_div.append(document.createElement("hr"));
         }
     })
     .then(d => {
         if (d != undefined) {
-        $message.innerText = "Usuário cadastrado com sucesso!";
+            $message_div.innerText = "Usuário cadastrado com sucesso!";
+            $message_div.append(document.createElement("hr"));
         setTimeout(_ => {
-            $message.innerText = "";
+            $message_div.innerHTML = "";
         }, 2000);
         console.log("Usuário cadastrado");
         init();
@@ -104,16 +103,23 @@ function sign_in () {
         console.log(r);
         if (r.ok) return r.json();
         else {
-            if (r.status === 404) $message.innerText = "Usuário não encontrado.";
-            else $message.innerText = "Senha inválida.";
+            if (r.status === 404) {
+                $message_div.innerText = "Usuário não encontrado.";
+                $message_div.append(document.createElement("hr"));
+            }
+            else {
+                $message_div.innerText = "Senha inválida.";
+                $message_div.append(document.createElement("hr"));
+            }
         }
     })
     .then(d => {
         if (d != undefined) {
             token = d.token;
-            $message.innerText = "Login realizado";
+            $message_div.innerText = "Login realizado";
+            $message_div.append(document.createElement("hr"));
             setTimeout(_ => {
-                $message.innerText = "";
+                $message_div.innerHTML = "";
             }, 2000);
             console.log("Login realizado");
             logged_user_view();
@@ -143,7 +149,6 @@ function logged_user_view () {
         console.log("d");
         $user = d;
         $p.innerText = "Olá " + $user.fname + " " + $user.lname;
-        document.querySelector("#logged_user").innerText = "Usuário logado.";
     });
 
 }
