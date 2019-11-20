@@ -80,12 +80,6 @@ function fetch_top_5_campaigns () {
                 let $cell2 = $row.insertCell(1);
                 let $cell3 = $row.insertCell(2);
                 let $cell4 = $row.insertCell(3);
-/*
-                $cell1.setAttribute("style", "width:400px;");
-                $cell2.setAttribute("style", "width:200px text-align:center");
-                $cell3.setAttribute("style", "width:200px text-align:center");
-                $cell4.setAttribute("style", "width:200px text-align:center");
-                */
 
                 $cell1.innerText = element.name;
                 $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
@@ -99,16 +93,16 @@ function fetch_top_5_campaigns () {
                 $cell4.appendChild($campaign_button);
 
                 i++;
-    });
+            });
         }
+    let $search_input = document.querySelector("#search_input")
+    $search_input.addEventListener("keyup", refresh_top_5);
     })
     .then (() => {
         console.log("Campaigns load finished.");
     });
 }
 
-let $search_input = document.querySelector("#search_input")
-$search_input.addEventListener("keyup", refresh_top_5);
 function refresh_top_5 () {
     // Declare variables
     var input, filter, table, tr, td, i, txtValue;
@@ -132,6 +126,7 @@ function refresh_top_5 () {
 }
 
 function load_campaign_view (campaign) {
+    // Campaign:
     let $template = document.querySelector("#campaign_view");
     $body.innerHTML = $template.innerHTML;
 
@@ -159,6 +154,27 @@ function load_campaign_view (campaign) {
     $back_button.addEventListener("click", init);
     $campaign.appendChild($back_button);
 
+    // Comments:
+    fetch_campaign_comments(campaign);
+}
+
+function fetch_campaign_comments (campaign) {
+    console.log("Beggining comments fetch");
+    fetch (API + "/campaigns/" + campaign.url + "/comments", {
+        method:"GET",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + token}
+    })
+    .then(r => r.json()
+    )
+    .then(d => {
+        d.forEach(e => {
+            let $comments_list = document.querySelector("#comments_list");
+            let $comment = document.createElement("LI");
+            $comment.innerText = e.text;
+            $comments_list.appendChild($comment);
+        })
+    });
 }
 
 function load_create_campaign_view () {
@@ -213,6 +229,7 @@ function create_campaign () {
         .then(d => {
             console.log("Campanha criada com sucesso.");
             console.log(d);
+            load_campaign_view(d);
         });
     }
 }
