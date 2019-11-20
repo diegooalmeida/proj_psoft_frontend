@@ -11,14 +11,13 @@ let token = undefined;
       Para isso é preciso recuperar no backend se o nome já existe, e se sim, recuperar o id numérico
       da nova camapnha e colocar ele no fim da url. Isso poderia ser feito no backend, mas a especificação
       diz que não. Melhor perguntar a Dalton, já que é uma pequena alteração;
-    - Fazer a listagem de campanhas na página inicial;
     - Fazer o link para cada campanha;
     - Após criar uma camapnha, redirecionar para a sua página.
 */ 
 
 init();
 
-function create_user (email, fname, lname, password, credit_card) {
+function create_user_object (email, fname, lname, password, credit_card) {
     let user = {};
     user.email = email;
     user.fname = fname;
@@ -50,12 +49,45 @@ function init () {
     load_home_view();
 }
 
+
+
 function load_home_view () {
     let $template = document.querySelector("#home_view");
     $body.innerHTML = $template.innerHTML;
 
     let $create_campaign = document.querySelector("#create_campaign");
     $create_campaign.addEventListener("click", load_create_campaign_view);
+
+    fetch_top_5_campaigns();
+}
+
+function fetch_top_5_campaigns () {
+    console.log("Loading campaigns.");
+    fetch (API + "/campaigns/top-5", {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => r.json())
+    .then (d => {
+        let $campaings_list = document.querySelector("#campaings_list");
+        if (d.length === 0) {
+            $campaings_list.innerText = "Ainda não existem campanhas cadastradas no sistema.";
+        } else {
+        d.forEach(element => {
+            let $p = document.createElement("P");
+            $p.innerText = "Campanha: " + element.name + ", criada por: " + element.owner + "\n" +
+                            "Doações: R$" + Number(element.donations).toFixed(2) +
+                            " / R$" + Number(element.goal).toFixed(2) + "\n";
+            let $campaing_button = document.createElement("BUTTON");
+            $campaing_button.innerText = "Ver detalhes da campanha";
+            $p.appendChild($campaing_button);
+            $campaings_list.appendChild($p);
+        });
+    }
+    })
+    .then (() => {
+        console.log("Campaigns load finished.");
+    });
 }
 
 function load_create_campaign_view () {
@@ -63,7 +95,8 @@ function load_create_campaign_view () {
     if (!is_logged()) {
         console.log("User not logged.");
 
-        $body.innerHTML = "";
+        let $campaigns_options = document.querySelector("#campaigns_options");
+        $campaigns_options.innerHTML = "";
 
         let $p = document.createElement("P");
         $p.innerText = "Você precisa estar logado para criar uma campanha.";
@@ -72,8 +105,8 @@ function load_create_campaign_view () {
         $back_button.innerText = "Voltar";
         $back_button.addEventListener("click", load_home_view);
 
-        $body.appendChild($p);
-        body.appendChild($back_button);
+        $campaigns_options.appendChild($p);
+        $campaigns_options.appendChild($back_button);
     } else {
 
         console.log("Logged user, loading view to insert campaign data.");
@@ -159,7 +192,7 @@ function sign_up () {
     let password = document.querySelector("#password").value;
     let credit_card = document.querySelector("#credit_card").value;
 
-    let user = create_user(email, fname, lname, password, credit_card);
+    let user = create_user_object(email, fname, lname, password, credit_card);
 
     fetch(API + "/users", {
         method:"POST",
@@ -200,7 +233,7 @@ function load_sign_in_view () {
 function sign_in () {
     let email = document.querySelector("#email").value;
     let password = document.querySelector("#password").value;
-    let user = create_user(email, "", "", password, "");
+    let user = create_user_object(email, "", "", password, "");
 
     fetch (API + "/auth/login", {
         method:"POST",

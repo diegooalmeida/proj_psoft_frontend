@@ -61,11 +61,14 @@
     </template>
 
     <template id="home_view">
-        <button id="create_campaign">Criar nova campanha</button>
-        <button id="list_all_campaigns">Listar todas as campanhas</button>
+        <div id="campaigns_options">
+            <button id="create_campaign">Criar nova campanha</button>
+            <button id="list_all_campaigns">Listar todas as campanhas</button>
+            <button>Ver lista de usuários</button>
+        </div>
 
-        <h3>Campanhas ativas</h3>
-        <p>Aqui vão estar listadas 5 campanhas, com um botão para listar todas.</p>
+        <h3>Campanhas ativas mais famosas</h3>
+        <div id="campaings_list"></div>
     </template>
 
     <template id="create_campaign_view">
