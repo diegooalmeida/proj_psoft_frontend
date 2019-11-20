@@ -67,28 +67,68 @@ function fetch_top_5_campaigns () {
     })
     .then (r => r.json())
     .then (d => {
-        let $campaings_list = document.querySelector("#campaings_list");
+        let $table = document.querySelector("#top_5_table");
         if (d.length === 0) {
-            $campaings_list.innerText = "Ainda não existem campanhas cadastradas no sistema.";
+            // TODO
         } else {
-        d.forEach(element => {
-            let $p = document.createElement("P");
-            $p.innerText = "Campanha: " + element.name + ", criada por: " + element.owner + "\n" +
-                            "Doações: R$" + Number(element.donations).toFixed(2) +
-                            " / R$" + Number(element.goal).toFixed(2) + "\n";
-            let $campaing_button = document.createElement("BUTTON");
-            $campaing_button.innerText = "Ver detalhes da campanha";
-            $campaing_button.addEventListener("click", () => {
-                load_campaign_view(element);
-            });
-            $p.appendChild($campaing_button);
-            $campaings_list.appendChild($p);
-        });
-    }
+            let i = 1;
+            d.forEach(element => {
+                console.log("escrevendo campanha " + i);
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+/*
+                $cell1.setAttribute("style", "width:400px;");
+                $cell2.setAttribute("style", "width:200px text-align:center");
+                $cell3.setAttribute("style", "width:200px text-align:center");
+                $cell4.setAttribute("style", "width:200px text-align:center");
+                */
+
+                $cell1.innerText = element.name;
+                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
+                $cell3.innerText = element.deadline;
+
+                let $campaign_button = document.createElement("BUTTON");
+                $campaign_button.innerText = "Ver página da campanha";
+                $campaign_button.addEventListener("click", () => {
+                    load_campaign_view(element);
+                });
+                $cell4.appendChild($campaign_button);
+
+                i++;
+    });
+        }
     })
     .then (() => {
         console.log("Campaigns load finished.");
     });
+}
+
+let $search_input = document.querySelector("#search_input")
+$search_input.addEventListener("keyup", refresh_top_5);
+function refresh_top_5 () {
+    // Declare variables
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.querySelector("#search_input").value
+    filter = input.toUpperCase();
+    table = document.getElementById("top_5_table");
+    tr = table.getElementsByTagName("tr");
+
+    // Loop through all table rows, and hide those who don't match the search query
+    for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+            txtValue = td.textContent || td.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
 }
 
 function load_campaign_view (campaign) {
