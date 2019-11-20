@@ -14,18 +14,16 @@
     <div id="message_div">
             <p id="message"></p>
     </div>
-    <div id="viewer"></div>
+    <div id="top"></div>
     <hr>
-    <div id="content">Conteúdo do site</div>
+    <h2>Campanhas</h2>
+    <div id="body"></div>
     <hr>
     <footer>
         Rodapé do site<br>
-        <hr>
-        <p>Funcionalidades extra para teste:</p>
-        <button id="delete_button">Matar o bd</button>
     </footer>
 
-    <template id="home_view">
+    <template id="not_logged_view">
     <p>
         É novo aqui?
         <button id="sign_up_button">Crie uma conta</button>
@@ -40,7 +38,7 @@
         <p>Email<br> <input id="email" type="text"></p>
         <p>Primeiro nome<br> <input id="fname" type="text"></p>
         <p>Último nome<br> <input id="lname" type="text"></p>
-        <p>Senha<br> <input id="password" type="text"></p>
+        <p>Senha<br> <input id="password" type="password"></p>
         <p>Cartão de crédito<br> <input id="credit_card" type="text"></p>
 
         <button id="sign_up">Cadastrar-se</button>
@@ -51,15 +49,39 @@
         <h2>Entrar em AJuDE</h2>
 
         <p>Email<br> <input id="email" type="text"></p>
-        <p>Senha<br> <input id="password" type="text"></p>
+        <p>Senha<br> <input id="password" type="password"></p>
         <button id="sign_in">Entrar</button>
         <button id="cancel">Cancelar</button>
     </template>
 
-    <template id="logged_user_view">
+    <template id="logged_view">
         <h2>Perfil</h2>
         <p id="hello_message"></p>
         <button id="logout_button">Desconectar</button>
+    </template>
+
+    <template id="home_view">
+        <button id="create_campaign">Criar nova campanha</button>
+        <button id="list_all_campaigns">Listar todas as campanhas</button>
+
+        <h3>Campanhas ativas</h3>
+        <p>Aqui vão estar listadas 5 campanhas, com um botão para listar todas.</p>
+    </template>
+
+    <template id="create_campaign_view">
+        <h3>Criar nova camapnha</h3>
+        <p>Insira abaixo os dados da nova campanha</p>
+
+        <p>Nome (máximo de 40 caracteres)<br> 
+            <input id="name" type="text" maxlength="40" style="width:250px;"></p>
+        <p>Descrição (máximo de 150 caracteres)<br>
+            <textarea id="description" cols="30" rows="4" maxlength="150"></textarea></p>
+        <p>Data de vencimento<br>
+            <input id="deadline" type="text" name="input" placeholder="DD/MM/YYYY"/></p>
+        <p>Meta<br>R$
+            <input id="goal" type="text" placeholder="R$XX,XX" value="0,00"></p>
+        <button id="create_campaign_button">Criar campanha</button>
+        <button id="cancel">Cancelar</button>
     </template>
 
 </body>
