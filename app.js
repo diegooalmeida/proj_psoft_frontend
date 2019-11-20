@@ -49,8 +49,6 @@ function init () {
     load_home_view();
 }
 
-
-
 function load_home_view () {
     let $template = document.querySelector("#home_view");
     $body.innerHTML = $template.innerHTML;
@@ -80,6 +78,9 @@ function fetch_top_5_campaigns () {
                             " / R$" + Number(element.goal).toFixed(2) + "\n";
             let $campaing_button = document.createElement("BUTTON");
             $campaing_button.innerText = "Ver detalhes da campanha";
+            $campaing_button.addEventListener("click", () => {
+                load_campaign_view(element);
+            });
             $p.appendChild($campaing_button);
             $campaings_list.appendChild($p);
         });
@@ -88,6 +89,36 @@ function fetch_top_5_campaigns () {
     .then (() => {
         console.log("Campaigns load finished.");
     });
+}
+
+function load_campaign_view (campaign) {
+    let $template = document.querySelector("#campaign_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $campaign = document.querySelector("#campaign_div");
+
+    let $name = document.createElement("H2");
+    $name.innerText = campaign.name;
+    $campaign.appendChild($name);
+    
+    let $description = document.createElement("P");
+    $description.innerText = "Descrição:\n" + campaign.description;
+    $campaign.appendChild($description);
+
+    let $progress = document.createElement("P");
+    $progress.innerText = "Progresso da campanha:\nR$" + 
+                            Number(campaign.donations).toFixed(2) + " / R$" + Number(campaign.goal).toFixed(2);
+    $campaign.appendChild($progress);
+
+    let $deadline = document.createElement("P");
+    $deadline.innerText = "Data de término da campanha:\n" + campaign.deadline;
+    $campaign.appendChild($deadline);
+
+    let $back_button = document.createElement("BUTTON");
+    $back_button.innerText = "Voltar à página inicial"
+    $back_button.addEventListener("click", init);
+    $campaign.appendChild($back_button);
+
 }
 
 function load_create_campaign_view () {
