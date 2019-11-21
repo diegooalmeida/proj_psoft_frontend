@@ -2,7 +2,7 @@ const API = "http://localhost:8080/api";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
 let $message_div = document.querySelector("#message_div");
-let token = undefined;
+let storage = window.localStorage;
 
 /*
     TODOS:
@@ -13,7 +13,7 @@ let token = undefined;
       diz que não. Melhor perguntar a Dalton, já que é uma pequena alteração;
     - Fazer o link para cada campanha;
     - Após criar uma camapnha, redirecionar para a sua página.
-*/ 
+*/
 
 init();
 
@@ -45,8 +45,16 @@ function init () {
     if (is_logged()) load_logged_view();
     else load_not_logged_view(); 
 
+    if (window.location.hash === "") 
+        window.location.hash = "/home"
+
     // Body of the site
-    load_home_view();
+    if (window.location.hash === "#/home")
+        load_home_view();
+    else if (window.location.hash === "#/sign-up")
+        load_sign_up_view();
+    else if (window.location.hash === "#/sign-in")
+        load_sign_in_view();
 }
 
 function load_home_view () {
@@ -73,7 +81,6 @@ function fetch_top_5_campaigns () {
         } else {
             let i = 1;
             d.forEach(element => {
-                console.log("escrevendo campanha " + i);
                 let $row = $table.insertRow(i);
 
                 let $cell1 = $row.insertCell(0);
@@ -250,14 +257,17 @@ function is_in_the_past (date) {
         return true;
 }
 
+// ********** TOP OF THE PAGE **********
+
 function is_logged () {
-    if (token === undefined) return false;
+    if (storage.getItem("token") === "null") return false;
     return true;
 }
 
 function cancel () {
     console.log("Canceled action");
     $message_div.innerHTML = "";
+    window.location.hash === "/home"
     init();
 }
 
@@ -268,7 +278,10 @@ function load_sign_up_view () {
     let $sign_up = document.querySelector("#sign_up");
     $sign_up.addEventListener("click", sign_up);
     let $cancel = document.querySelector("#cancel");
-    $cancel.addEventListener("click", cancel);
+    $cancel.addEventListener("click", () => {
+        window.location.hash = "/home";
+        cancel();
+    });
 }
 
 function sign_up () {
@@ -303,6 +316,7 @@ function sign_up () {
             $message_div.innerHTML = "";
         }, 2000);
         console.log("User registered");
+        window.location.hash = "/home";
         init();
     }
     });
@@ -315,7 +329,10 @@ function load_sign_in_view () {
     let $sign_in = document.querySelector("#sign_in");
     $sign_in.addEventListener("click", sign_in);
     let $cancel = document.querySelector("#cancel");
-    $cancel.addEventListener("click", cancel);
+    $cancel.addEventListener("click", () => {
+        window.location.hash = "/home";
+        cancel();
+    });
 }
 
 function sign_in () {
@@ -344,14 +361,15 @@ function sign_in () {
     })
     .then(d => {
         if (d != undefined) {
-            token = d.token;
+            storage.setItem("token", d.token);
             $message_div.innerText = "Login realizado";
             $message_div.append(document.createElement("hr"));
             setTimeout(_ => {
                 $message_div.innerHTML = "";
             }, 2000);
             console.log("Login realizado");
-            load_logged_view();
+            window.location.hash = "/home";
+            init();
         }
         
     });
@@ -362,10 +380,16 @@ function load_not_logged_view () {
     $top.innerHTML = $template.innerHTML;
 
     let $sign_up_button = document.querySelector("#sign_up_button");
-    $sign_up_button.addEventListener("click", load_sign_up_view);
+    $sign_up_button.addEventListener("click", () => {
+        window.location.hash = "/sign-up";
+        init();
+    });
 
     let $sign_in_button = document.querySelector("#sign_in_button");
-    $sign_in_button.addEventListener("click", load_sign_in_view);
+    $sign_in_button.addEventListener("click", () => {
+        window.location.hash = "/sign-in";
+        init();
+    });
 }
 
 function load_logged_view () {
@@ -373,13 +397,16 @@ function load_logged_view () {
     $top.innerHTML = $template.innerHTML;
 
     let $button = document.querySelector("#logout_button");
-    $button.addEventListener("click", cancel);
+    $button.addEventListener("click", () => {
+        storage.setItem("token", null);
+        cancel();
+    });
 
     let $p = document.querySelector("#hello_message");
     let $user;
 
     let headers = new Headers();
-    headers.append("Authorization", "Bearer " + token);
+    headers.append("Authorization", "Bearer " + storage.getItem("token"));
     fetch(API + "/users/auth", {
         method:"GET",
         headers: headers
