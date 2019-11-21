@@ -11,8 +11,6 @@ let storage = window.localStorage;
       Para isso é preciso recuperar no backend se o nome já existe, e se sim, recuperar o id numérico
       da nova camapnha e colocar ele no fim da url. Isso poderia ser feito no backend, mas a especificação
       diz que não. Melhor perguntar a Dalton, já que é uma pequena alteração;
-    - Fazer o link para cada campanha;
-    - Após criar uma camapnha, redirecionar para a sua página.
 */
 
 init();
@@ -41,6 +39,7 @@ function create_campaign_object (name, description, deadline, goal) {
 }
 
 function init () {
+
     // Top of the site
     if (is_logged()) load_logged_view();
     else load_not_logged_view(); 
@@ -51,10 +50,16 @@ function init () {
     // Body of the site
     if (window.location.hash === "#/home")
         load_home_view();
+    // Top of the site
     else if (window.location.hash === "#/sign-up")
         load_sign_up_view();
     else if (window.location.hash === "#/sign-in")
         load_sign_in_view();
+    // Body
+    else if (window.location.hash === "#/create-campaign")
+        load_create_campaign_view();
+    else if (window.location.hash.split("/")[1] === "campaign")
+        load_campaign_view(window.location.hash.split("/")[2]);
 }
 
 function load_home_view () {
@@ -62,7 +67,10 @@ function load_home_view () {
     $body.innerHTML = $template.innerHTML;
 
     let $create_campaign = document.querySelector("#create_campaign");
-    $create_campaign.addEventListener("click", load_create_campaign_view);
+    $create_campaign.addEventListener("click", () => {
+        window.location.hash = "/create-campaign";
+        init();
+    });
 
     fetch_top_5_campaigns();
 }
@@ -95,7 +103,8 @@ function fetch_top_5_campaigns () {
                 let $campaign_button = document.createElement("BUTTON");
                 $campaign_button.innerText = "Ver página da campanha";
                 $campaign_button.addEventListener("click", () => {
-                    load_campaign_view(element);
+                    window.location.hash = "/campaign/" + element.url;
+                    init();
                 });
                 $cell4.appendChild($campaign_button);
 
@@ -132,37 +141,64 @@ function refresh_top_5 () {
     }
 }
 
-function load_campaign_view (campaign) {
-    // Campaign:
-    let $template = document.querySelector("#campaign_view");
-    $body.innerHTML = $template.innerHTML;
+function load_campaign_view (campaign_url) {
+    console.log("Fetching view for: " + campaign_url);
 
-    let $campaign = document.querySelector("#campaign_div");
+    fetch (API + "/campaigns/" + campaign_url, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => {
+        console.log(r);
+        if (!r.ok) {
+            if (r.status === 404) {
+                console.log("Campaign not found");
+                $message_div.innerText = "Campanha não encontrada.";
+                $message_div.append(document.createElement("hr"));
+            }
+        } else {
+            return r.json();
+        }
+    })
+    .then(d => {
+        console.log(d);
+        $message_div.innerHTML = "";
+        if (d != undefined) {
+            // Campaign:
+            let $template = document.querySelector("#campaign_view");
+            $body.innerHTML = $template.innerHTML;
 
-    let $name = document.createElement("H2");
-    $name.innerText = campaign.name;
-    $campaign.appendChild($name);
-    
-    let $description = document.createElement("P");
-    $description.innerText = "Descrição:\n" + campaign.description;
-    $campaign.appendChild($description);
+            let $campaign = document.querySelector("#campaign_div");
 
-    let $progress = document.createElement("P");
-    $progress.innerText = "Progresso da campanha:\nR$" + 
-                            Number(campaign.donations).toFixed(2) + " / R$" + Number(campaign.goal).toFixed(2);
-    $campaign.appendChild($progress);
+            let $name = document.createElement("H2");
+            $name.innerText = d.name;
+            $campaign.appendChild($name);
+            
+            let $description = document.createElement("P");
+            $description.innerText = "Descrição:\n" + d.description;
+            $campaign.appendChild($description);
 
-    let $deadline = document.createElement("P");
-    $deadline.innerText = "Data de término da campanha:\n" + campaign.deadline;
-    $campaign.appendChild($deadline);
+            let $progress = document.createElement("P");
+            $progress.innerText = "Progresso da campanha:\nR$" + 
+                                    Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
+            $campaign.appendChild($progress);
 
-    let $back_button = document.createElement("BUTTON");
-    $back_button.innerText = "Voltar à página inicial"
-    $back_button.addEventListener("click", init);
-    $campaign.appendChild($back_button);
+            let $deadline = document.createElement("P");
+            $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
+            $campaign.appendChild($deadline);
 
-    // Comments:
-    fetch_campaign_comments(campaign);
+            let $back_button = document.createElement("BUTTON");
+            $back_button.innerText = "Voltar à página inicial"
+            $back_button.addEventListener("click", () => {
+                window.location.hash = "/home";
+                init();
+            });
+            $campaign.appendChild($back_button);
+
+            // Comments:
+            fetch_campaign_comments(d);
+        }
+    });
 }
 
 function fetch_campaign_comments (campaign) {
@@ -170,11 +206,12 @@ function fetch_campaign_comments (campaign) {
     fetch (API + "/campaigns/" + campaign.url + "/comments", {
         method:"GET",
         headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + token}
+                  "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then(r => r.json()
     )
     .then(d => {
+        console.log(d);
         d.forEach(e => {
             let $comments_list = document.querySelector("#comments_list");
             let $comment = document.createElement("LI");
@@ -197,7 +234,10 @@ function load_create_campaign_view () {
 
         let $back_button = document.createElement("BUTTON");
         $back_button.innerText = "Voltar";
-        $back_button.addEventListener("click", load_home_view);
+        $back_button.addEventListener("click", () => {
+            window.location.hash = "/home";
+            init();
+        });
 
         $campaigns_options.appendChild($p);
         $campaigns_options.appendChild($back_button);
@@ -208,7 +248,10 @@ function load_create_campaign_view () {
         $body.innerHTML = $template.innerHTML;
 
         let $cancel = document.querySelector("#cancel");
-        $cancel.addEventListener("click", cancel);
+        $cancel.addEventListener("click", () => {
+            window.location.hash = "/home";
+            cancel();
+        });
 
         let $create_campaign_button = document.querySelector("#create_campaign_button")
         $create_campaign_button.addEventListener("click", create_campaign);
@@ -229,14 +272,16 @@ function create_campaign () {
         fetch (API + "/campaigns/create", {
             method:"POST",
             headers: {"Content-Type":"application/json",
-                      "Authorization":"Bearer " + token},
+                      "Authorization":"Bearer " + storage.getItem("token")},
             body: JSON.stringify(campaign)
         })
         .then(r => r.json())
         .then(d => {
             console.log("Campanha criada com sucesso.");
             console.log(d);
-            load_campaign_view(d);
+
+            window.location.hash = "/campaign/" + d.url;
+            init();
         });
     }
 }
@@ -411,10 +456,20 @@ function load_logged_view () {
         method:"GET",
         headers: headers
     })
-    .then(r => r.json())
+    .then(r => {
+
+        console.log(r);
+        if (r.status === 403) {
+            storage.setItem("token", null);
+            init();
+        } else 
+            return r.json()
+    })
     .then(d => {
-        $user = d;
-        $p.innerText = "Olá " + $user.fname + " " + $user.lname;
+        if (d !== undefined) {
+            $user = d;
+            $p.innerText = "Olá " + $user.fname + " " + $user.lname;
+        }
     });
 
 }
