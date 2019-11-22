@@ -1,4 +1,4 @@
-const API = "http://localhost:8080/api";
+const API = "http://localhost:8080";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
 let $message_div = document.querySelector("#message_div");
@@ -66,12 +66,20 @@ function load_all_campaigns_view () {
         init();
     });
 
-    fetch_campaigns();
+    fetch_campaigns("actives");
+    let $search_input = document.querySelector("#search_input")
+    $search_input.addEventListener("keyup", () => {
+        // em vez de chamar o refresh tem que chamar o fetch 
+        refresh_campaigns_table(document.getElementById("campaigns_table"));
+    });
+    let $campaigns_filter = document.querySelector("#campaigns_filter");
+    $campaigns_filter.onchange = function(){
 
-
+        fetch_campaigns($campaigns_filter.value);
+    };
 }
 
-function fetch_campaigns() {
+function fetch_campaigns(status) {
     fetch (API + "/campaigns", {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
@@ -79,10 +87,11 @@ function fetch_campaigns() {
     .then (r => r.json())
     .then (d => {
         let $table = document.querySelector("#campaigns_table");
+        $table.innerText = "";
         if (d.length === 0) {
-            // TODO
+            // TODO: mensagem de nenhuma campanha cadastrada
         } else {
-            let i = 1;
+            let i = 0;
             d.forEach(element => {
                 let $row = $table.insertRow(i);
 
@@ -106,17 +115,14 @@ function fetch_campaigns() {
                 i++;
             });
         }
-    let $search_input = document.querySelector("#search_input")
-    $search_input.addEventListener("keyup", refresh_campaigns_table);
     });
 }
 
-function refresh_campaigns_table () {
+function refresh_campaigns_table (table) {
     // Declare variables
     var input, filter, table, tr, td, i, txtValue;
     input = document.querySelector("#search_input").value
     filter = input.toUpperCase();
-    table = document.getElementById("campaigns_table");
     tr = table.getElementsByTagName("tr");
 
     // Loop through all table rows, and hide those who don't match the search query
@@ -149,10 +155,19 @@ function load_home_view () {
         init();
     })
 
-    fetch_top_5_campaigns();
+    fetch_top_5_campaigns("active");
+    let $search_input = document.querySelector("#search_input")
+    $search_input.addEventListener("keyup", refresh_top_5);
+    let $campaigns_filter = document.querySelector("#campaigns_filter");
+    $campaigns_filter.onchange = function(){
+        fetch_top_5_campaigns($campaigns_filter.value);
+    };
 }
 
-function fetch_top_5_campaigns () {
+function fetch_top_5_campaigns (status) {
+    //todo: adicionar /status e alterar essa rota para filtrar apenas as com esse status
+    //todo: em vez de quando o input search for alterado chamar o refresh, chama isso
+    // aqui de novo
     fetch (API + "/campaigns/top-5", {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
@@ -160,10 +175,11 @@ function fetch_top_5_campaigns () {
     .then (r => r.json())
     .then (d => {
         let $table = document.querySelector("#top_5_table");
+        $table.innerText = "";
         if (d.length === 0) {
             // TODO
         } else {
-            let i = 1;
+            let i = 0;
             d.forEach(element => {
                 let $row = $table.insertRow(i);
 
@@ -187,8 +203,6 @@ function fetch_top_5_campaigns () {
                 i++;
             });
         }
-    let $search_input = document.querySelector("#search_input")
-    $search_input.addEventListener("keyup", refresh_top_5);
     });
 }
 
@@ -239,25 +253,20 @@ function load_campaign_view (campaign_url) {
 
             let $campaign = document.querySelector("#campaign_div");
 
-            let $name = document.createElement("H2");
+            let $name = document.querySelector("#name");
             $name.innerText = d.name;
-            $campaign.appendChild($name);
             
-            let $description = document.createElement("P");
-            $description.innerText = "Descrição:\n" + d.description;
-            $campaign.appendChild($description);
+            let $description = document.querySelector("#description");
+            $description.innerText = d.description;
 
-            let $progress = document.createElement("P");
+            let $progress = document.querySelector("#progress");
             $progress.innerText = "Progresso da campanha:\nR$" + 
                                     Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
-            $campaign.appendChild($progress);
 
-            let $deadline = document.createElement("P");
+            let $deadline = document.querySelector("#deadline");
             $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
-            $campaign.appendChild($deadline);
 
-            let $back_button = document.createElement("BUTTON");
-            $back_button.innerText = "Voltar à página inicial"
+            let $back_button = document.querySelector("#back_button");
             $back_button.addEventListener("click", () => {
                 window.location.hash = "/home";
                 init();

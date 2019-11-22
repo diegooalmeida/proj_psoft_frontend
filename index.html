@@ -69,14 +69,18 @@
 
         <h3>Campanhas ativas mais famosas</h3>
 
-        <input type="text" id="search_input" placeholder="Procurar uma campanha...">
+        <p>
+            Mostrar apenas:
+            <select id="campaigns_filter">
+                <option value="actives">Ativas</option>
+                <option value="concluded">Concluídas</option>
+                <option value="expired">Vencidas</option>
+                <option value="all">Todas</option>
+            </select>
+        </p>
+        <input type="text" id="search_input" placeholder="Procurar uma campanha..."> <br><br>
+        Campanha Doações Término <br>
         <table id="top_5_table">
-          <tr class="header">
-            <th style="width:400px;">Campanha</th>
-            <th style="width:150px;">Progresso</th>
-            <th style="width:150px;">Vencimento</th>
-            <th sytle="width:150px"></th>
-          </tr>
         </table> 
 
     </template>
@@ -98,7 +102,18 @@
     </template>
 
     <template id="campaign_view">
-        <div id="campaign_div"></div>
+        <div id="campaign_div">
+            <h2 id="name"></h2>
+
+            <p id="description"></p>
+
+            <p id="progress"></p>
+
+            <p id="deadline"></p>
+
+            <button id="back_button">Voltar à página inicial</button>
+        </div>
+        
         <div id="comments_div">
             <h3>Comentários</h3>
             <ul id="comments_list"></ul>
@@ -106,18 +121,20 @@
     </template>
 
     <template id="all_campaigns_view">
-        <input type="text" id="search_input" placeholder="Procurar uma campanha...">
-        <button id="back_button">Voltar à página inicial</button>
+        <button id="back_button">Voltar à página inicial</button><br>
+        <p>
+            Mostrar apenas:
+            <select id="campaigns_filter">
+                <option value="actives">Ativas</option>
+                <option value="concluded">Concluídas</option>
+                <option value="expired">Vencidas</option>
+                <option value="all">Todas</option>
+            </select>
+        </p>
+        <input type="text" id="search_input" placeholder="Procurar uma campanha..."> <br><br>
+        Campanha Doações Término <br>
         <table id="campaigns_table">
-          <tr class="header">
-            <th style="width:400px;">Campanha</th>
-            <th style="width:150px;">Progresso</th>
-            <th style="width:150px;">Vencimento</th>
-            <th sytle="width:150px"></th>
-          </tr>
         </table> 
-
-
     </template>
 </body>
 </html>
