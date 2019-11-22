@@ -4,15 +4,6 @@ let $body = document.querySelector("#body");
 let $message_div = document.querySelector("#message_div");
 let storage = window.localStorage;
 
-/*
-    TODOS:
-    - falta fazer um jeito de mudar a url padrão caso ela já existe (caso exista uma campanha
-      com o memso nome).
-      Para isso é preciso recuperar no backend se o nome já existe, e se sim, recuperar o id numérico
-      da nova camapnha e colocar ele no fim da url. Isso poderia ser feito no backend, mas a especificação
-      diz que não. Melhor perguntar a Dalton, já que é uma pequena alteração;
-*/
-
 init();
 
 function create_user_object (email, fname, lname, password, credit_card) {
@@ -39,7 +30,6 @@ function create_campaign_object (name, description, deadline, goal) {
 }
 
 function init () {
-
     // Top of the site
     if (is_logged()) load_logged_view();
     else load_not_logged_view(); 
@@ -56,10 +46,18 @@ function init () {
     else if (window.location.hash === "#/sign-in")
         load_sign_in_view();
     // Body
-    else if (window.location.hash === "#/create-campaign")
-        load_create_campaign_view();
-    else if (window.location.hash.split("/")[1] === "campaign")
-        load_campaign_view(window.location.hash.split("/")[2]);
+    else if (window.location.hash.split("/")[1] === "campaigns") {
+        if (window.location.hash.split("/")[2] === "create")
+            load_create_campaign_view();
+        else if (window.location.hash.split("/")[2] === "all")
+            load_all_campaigns_view();
+        else
+            load_campaign_view(window.location.hash.split("/")[2]);
+    }
+}
+
+function load_all_campaigns_view () {
+    console.log("TODO");
 }
 
 function load_home_view () {
@@ -68,15 +66,20 @@ function load_home_view () {
 
     let $create_campaign = document.querySelector("#create_campaign");
     $create_campaign.addEventListener("click", () => {
-        window.location.hash = "/create-campaign";
+        window.location.hash = "/campaigns/create";
         init();
     });
+
+    let $list_all_campaigns = document.querySelector("#list_all_campaigns");
+    $list_all_campaigns.addEventListener("click", () => {
+        window.location.hash = "/campaigns/all";
+        init();
+    })
 
     fetch_top_5_campaigns();
 }
 
 function fetch_top_5_campaigns () {
-    console.log("Loading campaigns.");
     fetch (API + "/campaigns/top-5", {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
@@ -103,7 +106,7 @@ function fetch_top_5_campaigns () {
                 let $campaign_button = document.createElement("BUTTON");
                 $campaign_button.innerText = "Ver página da campanha";
                 $campaign_button.addEventListener("click", () => {
-                    window.location.hash = "/campaign/" + element.url;
+                    window.location.hash = "/campaigns/" + element.url;
                     init();
                 });
                 $cell4.appendChild($campaign_button);
@@ -113,9 +116,6 @@ function fetch_top_5_campaigns () {
         }
     let $search_input = document.querySelector("#search_input")
     $search_input.addEventListener("keyup", refresh_top_5);
-    })
-    .then (() => {
-        console.log("Campaigns load finished.");
     });
 }
 
@@ -142,17 +142,14 @@ function refresh_top_5 () {
 }
 
 function load_campaign_view (campaign_url) {
-    console.log("Fetching view for: " + campaign_url);
 
     fetch (API + "/campaigns/" + campaign_url, {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
     })
     .then (r => {
-        console.log(r);
         if (!r.ok) {
             if (r.status === 404) {
-                console.log("Campaign not found");
                 $message_div.innerText = "Campanha não encontrada.";
                 $message_div.append(document.createElement("hr"));
             }
@@ -161,7 +158,6 @@ function load_campaign_view (campaign_url) {
         }
     })
     .then(d => {
-        console.log(d);
         $message_div.innerHTML = "";
         if (d != undefined) {
             // Campaign:
@@ -202,7 +198,6 @@ function load_campaign_view (campaign_url) {
 }
 
 function fetch_campaign_comments (campaign) {
-    console.log("Beggining comments fetch");
     fetch (API + "/campaigns/" + campaign.url + "/comments", {
         method:"GET",
         headers: {"Content-Type":"application/json",
@@ -211,7 +206,6 @@ function fetch_campaign_comments (campaign) {
     .then(r => r.json()
     )
     .then(d => {
-        console.log(d);
         d.forEach(e => {
             let $comments_list = document.querySelector("#comments_list");
             let $comment = document.createElement("LI");
@@ -222,9 +216,7 @@ function fetch_campaign_comments (campaign) {
 }
 
 function load_create_campaign_view () {
-    console.log("load_create_campaign_view ()");
     if (!is_logged()) {
-        console.log("User not logged.");
 
         let $campaigns_options = document.querySelector("#campaigns_options");
         $campaigns_options.innerHTML = "";
@@ -243,7 +235,6 @@ function load_create_campaign_view () {
         $campaigns_options.appendChild($back_button);
     } else {
 
-        console.log("Logged user, loading view to insert campaign data.");
         let $template = document.querySelector("#create_campaign_view");
         $body.innerHTML = $template.innerHTML;
 
@@ -277,10 +268,8 @@ function create_campaign () {
         })
         .then(r => r.json())
         .then(d => {
-            console.log("Campanha criada com sucesso.");
-            console.log(d);
 
-            window.location.hash = "/campaign/" + d.url;
+            window.location.hash = "/campaigns/" + d.url;
             init();
         });
     }
@@ -306,11 +295,22 @@ function is_in_the_past (date) {
 
 function is_logged () {
     if (storage.getItem("token") === "null") return false;
-    return true;
+    else return valid_token;
+}
+
+async function valid_token () {
+    fetch(API + "/auth/valid-token", {
+        method:"GET",
+        headers: {"Content-Type":"application/json",
+                    "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => r.json())
+    .then (d => {
+        return d;
+    });
 }
 
 function cancel () {
-    console.log("Canceled action");
     $message_div.innerHTML = "";
     window.location.hash === "/home"
     init();
@@ -330,7 +330,6 @@ function load_sign_up_view () {
 }
 
 function sign_up () {
-    /* >>> */ console.log("Registering user");
 
     let email = document.querySelector("#email").value;
     let fname = document.querySelector("#fname").value;
@@ -348,7 +347,6 @@ function sign_up () {
     .then(r => {
         if (r.ok) return r.json();
         else {
-            console.log("Email already exists");
             $message_div.innerText = "Email já cadastrado, tente novamente";
             $message_div.append(document.createElement("hr"));
         }
@@ -360,7 +358,6 @@ function sign_up () {
         setTimeout(_ => {
             $message_div.innerHTML = "";
         }, 2000);
-        console.log("User registered");
         window.location.hash = "/home";
         init();
     }
@@ -391,7 +388,6 @@ function sign_in () {
         body: JSON.stringify(user)
     })
     .then(r => {
-        console.log(r);
         if (r.ok) return r.json();
         else {
             if (r.status === 404) {
@@ -412,7 +408,6 @@ function sign_in () {
             setTimeout(_ => {
                 $message_div.innerHTML = "";
             }, 2000);
-            console.log("Login realizado");
             window.location.hash = "/home";
             init();
         }
@@ -458,7 +453,6 @@ function load_logged_view () {
     })
     .then(r => {
 
-        console.log(r);
         if (r.status === 403) {
             storage.setItem("token", null);
             init();
