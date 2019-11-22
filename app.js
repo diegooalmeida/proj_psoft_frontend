@@ -57,7 +57,80 @@ function init () {
 }
 
 function load_all_campaigns_view () {
-    console.log("TODO");
+    let $template = document.querySelector("#all_campaigns_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        window.location.hash = "/home";
+        init();
+    });
+
+    fetch_campaigns();
+
+
+}
+
+function fetch_campaigns() {
+    fetch (API + "/campaigns", {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => r.json())
+    .then (d => {
+        let $table = document.querySelector("#campaigns_table");
+        if (d.length === 0) {
+            // TODO
+        } else {
+            let i = 1;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+
+                $cell1.innerText = element.name;
+                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
+                $cell3.innerText = element.deadline;
+
+                let $campaign_button = document.createElement("BUTTON");
+                $campaign_button.innerText = "Ver página da campanha";
+                $campaign_button.addEventListener("click", () => {
+                    window.location.hash = "/campaigns/" + element.url;
+                    init();
+                });
+                $cell4.appendChild($campaign_button);
+
+                i++;
+            });
+        }
+    let $search_input = document.querySelector("#search_input")
+    $search_input.addEventListener("keyup", refresh_campaigns_table);
+    });
+}
+
+function refresh_campaigns_table () {
+    // Declare variables
+    var input, filter, table, tr, td, i, txtValue;
+    input = document.querySelector("#search_input").value
+    filter = input.toUpperCase();
+    table = document.getElementById("campaigns_table");
+    tr = table.getElementsByTagName("tr");
+
+    // Loop through all table rows, and hide those who don't match the search query
+    for (i = 0; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+            txtValue = td.textContent || td.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
 }
 
 function load_home_view () {
