@@ -186,7 +186,6 @@ function fetch_top_5_campaigns (sort, status, substring) {
             // TODO
         } else {
             let i = 0;
-            console.log(d);
             d.forEach(element => {
                 let $row = $table.insertRow(i);
 
@@ -285,16 +284,13 @@ function to_comment (url) {
     })
     .then (d => {
         // todo: mostrar ou retirar mensagens
-        console.log("Comentário adicionado:");
-        console.log(d);
-
         // Depois de adicionar o comentário, faz o refresh dos comentários
         fetch_campaign_comments(url);
     });
 }
 
 function fetch_campaign_comments (url) {
-    console.log("fetching");
+    console.log("fetching for: " + url);
     let $table = document.querySelector("#comments_table");
     $table.innerText = "";
     fetch (API + "/campaigns/" + url + "/comments", {
@@ -323,20 +319,33 @@ function fetch_campaign_comments (url) {
             $cell3.appendChild($answers_button);
 
             let logged_user_email = storage.getItem("user_email");
-            console.log(logged_user_email);
             if (logged_user_email === element.owner) {
-                console.log("dentro do if");
                 let $cell4 = $row.insertCell(3);
                 let $delete_comment_button = document.createElement("BUTTON");
                 $delete_comment_button.innerText = "Deletar comentário";
                 $delete_comment_button.addEventListener("click", () => {
-                    console.log("todo: deletar o comentário" + element.text);
-                    //$delete_comment_button(d);
+                    delete_comment(element);
                 });
                 $cell4.appendChild(document.createElement("BR"));
                 $cell4.appendChild($delete_comment_button);
             }
         })
+    });
+}
+
+function delete_comment(comment) {
+    console.log("email do user logado: " + storage.getItem("user_email"));
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id, {
+        method:"DELETE",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => {
+        console.log(r);
+        return r.json();
+    })
+    .then (d => {
+        fetch_campaign_comments(comment.campaign);
     });
 }
 
