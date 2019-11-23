@@ -1,3 +1,5 @@
+//TODO: testar listagem com as ordenações
+
 const API = "http://localhost:8080";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
@@ -155,15 +157,22 @@ function load_home_view () {
         init();
     })
 
-    fetch_top_5_campaigns("a", "active", "");
     let $search_input = document.querySelector("#search_input");
     let $campaigns_filter = document.querySelector("#campaigns_filter");
+    let $sort_parameter = document.querySelector("#sort_parameter");
+
+    fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+   
     $search_input.addEventListener("keyup", () => {
-        fetch_top_5_campaigns("a", $campaigns_filter.value, $search_input.value);
+        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     });
-    $campaigns_filter.onchange = function(){
-        fetch_top_5_campaigns("a", $campaigns_filter.value, $search_input.value);
+    $campaigns_filter.onchange = function() {
+        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     };
+    $sort_parameter.onchange = function() {
+        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    };
+
 }
 
 function fetch_top_5_campaigns (sort, status, substring) {
@@ -174,17 +183,12 @@ function fetch_top_5_campaigns (sort, status, substring) {
         route = API + "/campaigns/top-5/filter-by/" + sort + "/" + status + "/" + substring;
     let $table = document.querySelector("#top_5_table");
     $table.innerText = "";
-    console.log("fetching for: " + API + "/campaigns/top-5/filter-by/" + sort + "/" + status + "/" + substring);
     fetch (route, {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
     })
-    .then (r => {
-        console.log(r);
-        return r.json();
-    })
+    .then (r => r.json())
     .then (d => {
-        console.log(d);
         if (d.length === 0) {
             // TODO
         } else {
