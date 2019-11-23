@@ -155,27 +155,36 @@ function load_home_view () {
         init();
     })
 
-    fetch_top_5_campaigns("active");
-    let $search_input = document.querySelector("#search_input")
-    $search_input.addEventListener("keyup", refresh_top_5);
+    fetch_top_5_campaigns("a", "active", "");
+    let $search_input = document.querySelector("#search_input");
     let $campaigns_filter = document.querySelector("#campaigns_filter");
+    $search_input.addEventListener("keyup", () => {
+        fetch_top_5_campaigns("a", $campaigns_filter.value, $search_input.value);
+    });
     $campaigns_filter.onchange = function(){
-        fetch_top_5_campaigns($campaigns_filter.value);
+        fetch_top_5_campaigns("a", $campaigns_filter.value, $search_input.value);
     };
 }
 
-function fetch_top_5_campaigns (status) {
-    //todo: adicionar /status e alterar essa rota para filtrar apenas as com esse status
-    //todo: em vez de quando o input search for alterado chamar o refresh, chama isso
-    // aqui de novo
-    fetch (API + "/campaigns/top-5", {
+function fetch_top_5_campaigns (sort, status, substring) {
+    let route;
+    if (substring === "")
+        route = API + "/campaigns/top-5/filter-by/" + sort + "/" + status;
+    else
+        route = API + "/campaigns/top-5/filter-by/" + sort + "/" + status + "/" + substring;
+    let $table = document.querySelector("#top_5_table");
+    $table.innerText = "";
+    console.log("fetching for: " + API + "/campaigns/top-5/filter-by/" + sort + "/" + status + "/" + substring);
+    fetch (route, {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
     })
-    .then (r => r.json())
+    .then (r => {
+        console.log(r);
+        return r.json();
+    })
     .then (d => {
-        let $table = document.querySelector("#top_5_table");
-        $table.innerText = "";
+        console.log(d);
         if (d.length === 0) {
             // TODO
         } else {
@@ -204,28 +213,6 @@ function fetch_top_5_campaigns (status) {
             });
         }
     });
-}
-
-function refresh_top_5 () {
-    // Declare variables
-    var input, filter, table, tr, td, i, txtValue;
-    input = document.querySelector("#search_input").value
-    filter = input.toUpperCase();
-    table = document.getElementById("top_5_table");
-    tr = table.getElementsByTagName("tr");
-
-    // Loop through all table rows, and hide those who don't match the search query
-    for (i = 0; i < tr.length; i++) {
-        td = tr[i].getElementsByTagName("td")[0];
-        if (td) {
-            txtValue = td.textContent || td.innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
-        }
-    }
 }
 
 function load_campaign_view (campaign_url) {
