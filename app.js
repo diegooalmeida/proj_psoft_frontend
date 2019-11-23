@@ -1,4 +1,6 @@
 //TODO: testar listagem com as ordenações
+//TODO: reler e refarotrar o código para as rotas erradas ou com possível erro
+//      e tratar isso.
 
 const API = "http://localhost:8080";
 let $top = document.querySelector("#top");
@@ -83,20 +85,6 @@ function load_all_campaigns_view () {
     $sort_parameter.onchange = function() {
         fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     };
-
-    /*
-    fetch_campaigns("actives");
-    let $search_input = document.querySelector("#search_input")
-    $search_input.addEventListener("keyup", () => {
-        // em vez de chamar o refresh tem que chamar o fetch 
-        refresh_campaigns_table(document.getElementById("campaigns_table"));
-    });
-    let $campaigns_filter = document.querySelector("#campaigns_filter");
-    $campaigns_filter.onchange = function(){
-
-        fetch_campaigns($campaigns_filter.value);
-    };
-    */
 }
 
 function fetch_campaigns(sort, status, substring) {
@@ -143,27 +131,6 @@ function fetch_campaigns(sort, status, substring) {
             });
         }
     });
-}
-
-function refresh_campaigns_table (table) {
-    // Declare variables
-    var input, filter, table, tr, td, i, txtValue;
-    input = document.querySelector("#search_input").value
-    filter = input.toUpperCase();
-    tr = table.getElementsByTagName("tr");
-
-    // Loop through all table rows, and hide those who don't match the search query
-    for (i = 0; i < tr.length; i++) {
-        td = tr[i].getElementsByTagName("td")[0];
-        if (td) {
-            txtValue = td.textContent || td.innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
-        }
-    }
 }
 
 function load_home_view () {
@@ -291,13 +258,45 @@ function load_campaign_view (campaign_url) {
             $campaign.appendChild($back_button);
 
             // Comments:
-            fetch_campaign_comments(d);
+            fetch_campaign_comments(d.url);
+
+            let $comment_button = document.querySelector("#comment_button");
+            $comment_button.addEventListener("click", () => {
+                to_comment(d.url);
+                let $comment_input = document.querySelector("#comment_input");
+                $comment_input.value = "";
+            });
         }
     });
 }
 
-function fetch_campaign_comments (campaign) {
-    fetch (API + "/campaigns/" + campaign.url + "/comments", {
+function to_comment (url) {
+    let $comment_text = document.querySelector("#comment_input");
+    fetch (API + "/campaigns/" + url + "/comments", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+        "Authorization":"Bearer " + storage.getItem("token")},
+        body:`{"text":"${$comment_text.value}"}`
+    })
+    .then (r => {
+        //todo: tratar possíveis erros como 404 para uma camapnha que não existe
+        return r.json();
+    })
+    .then (d => {
+        // todo: mostrar ou retirar mensagens
+        console.log("Comentário adicionado:");
+        console.log(d);
+
+        // Depois de adicionar o comentário, faz o refresh dos comentários
+        fetch_campaign_comments(url);
+    });
+}
+
+function fetch_campaign_comments (url) {
+    console.log("fetching");
+    let $table = document.querySelector("#comments_table");
+    $table.innerText = "";
+    fetch (API + "/campaigns/" + url + "/comments", {
         method:"GET",
         headers: {"Content-Type":"application/json",
                   "Authorization":"Bearer " + storage.getItem("token")}
@@ -305,11 +304,23 @@ function fetch_campaign_comments (campaign) {
     .then(r => r.json()
     )
     .then(d => {
-        d.forEach(e => {
-            let $comments_list = document.querySelector("#comments_list");
-            let $comment = document.createElement("LI");
-            $comment.innerText = e.text;
-            $comments_list.appendChild($comment);
+        let i = 0;
+        console.log(d);
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+            let $cell3 = $row.insertCell(2);
+
+            $cell1.innerText = element.owner + " diz: ";
+            $cell2.innerText = element.text;
+            let $answers_button = document.createElement("BUTTON");
+            $answers_button.innerText = "Responder";
+
+            $cell3.appendChild(document.createElement("BR"));
+            $cell3.appendChild($answers_button);
+
         })
     });
 }
