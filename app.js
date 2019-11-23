@@ -34,6 +34,7 @@ function create_campaign_object (name, description, deadline, goal) {
 }
 
 function init () {
+
     // Top of the site
     if (is_logged()) load_logged_view();
     else load_not_logged_view(); 
@@ -321,6 +322,20 @@ function fetch_campaign_comments (url) {
             $cell3.appendChild(document.createElement("BR"));
             $cell3.appendChild($answers_button);
 
+            let logged_user_email = storage.getItem("user_email");
+            console.log(logged_user_email);
+            if (logged_user_email === element.owner) {
+                console.log("dentro do if");
+                let $cell4 = $row.insertCell(3);
+                let $delete_comment_button = document.createElement("BUTTON");
+                $delete_comment_button.innerText = "Deletar comentário";
+                $delete_comment_button.addEventListener("click", () => {
+                    console.log("todo: deletar o comentário" + element.text);
+                    //$delete_comment_button(d);
+                });
+                $cell4.appendChild(document.createElement("BR"));
+                $cell4.appendChild($delete_comment_button);
+            }
         })
     });
 }
@@ -513,6 +528,7 @@ function sign_in () {
     .then(d => {
         if (d != undefined) {
             storage.setItem("token", d.token);
+            storage.setItem("user_email", email);
             $message_div.innerText = "Login realizado";
             $message_div.append(document.createElement("hr"));
             setTimeout(_ => {
@@ -548,6 +564,7 @@ function load_logged_view () {
 
     let $button = document.querySelector("#logout_button");
     $button.addEventListener("click", () => {
+        storage.setItem("user_email", null);
         storage.setItem("token", null);
         cancel();
     });
