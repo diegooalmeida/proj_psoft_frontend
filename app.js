@@ -68,6 +68,23 @@ function load_all_campaigns_view () {
         init();
     });
 
+    let $search_input = document.querySelector("#search_input");
+    let $campaigns_filter = document.querySelector("#campaigns_filter");
+    let $sort_parameter = document.querySelector("#sort_parameter");
+
+    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+   
+    $search_input.addEventListener("keyup", () => {
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    });
+    $campaigns_filter.onchange = function() {
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    };
+    $sort_parameter.onchange = function() {
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    };
+
+    /*
     fetch_campaigns("actives");
     let $search_input = document.querySelector("#search_input")
     $search_input.addEventListener("keyup", () => {
@@ -79,16 +96,24 @@ function load_all_campaigns_view () {
 
         fetch_campaigns($campaigns_filter.value);
     };
+    */
 }
 
-function fetch_campaigns(status) {
-    fetch (API + "/campaigns", {
+function fetch_campaigns(sort, status, substring) {
+    let route;
+    if (substring === "")
+        route = API + "/campaigns/all/filter-by/" + sort + "/" + status;
+    else
+        route = API + "/campaigns/all/filter-by/" + sort + "/" + status + "/" + substring;
+    let $table = document.querySelector("#campaigns_table");
+    $table.innerText = "";
+    fetch (route, {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
     })
     .then (r => r.json())
     .then (d => {
-        let $table = document.querySelector("#campaigns_table");
+        // let $table = document.querySelector("#campaigns_table");
         $table.innerText = "";
         if (d.length === 0) {
             // TODO: mensagem de nenhuma campanha cadastrada
@@ -193,6 +218,7 @@ function fetch_top_5_campaigns (sort, status, substring) {
             // TODO
         } else {
             let i = 0;
+            console.log(d);
             d.forEach(element => {
                 let $row = $table.insertRow(i);
 
