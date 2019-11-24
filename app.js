@@ -102,7 +102,6 @@ function fetch_campaigns(sort, status, substring) {
     })
     .then (r => r.json())
     .then (d => {
-        // let $table = document.querySelector("#campaigns_table");
         $table.innerText = "";
         if (d.length === 0) {
             // TODO: mensagem de nenhuma campanha cadastrada
@@ -250,6 +249,18 @@ function load_campaign_view (campaign_url) {
             let $deadline = document.querySelector("#deadline");
             $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
 
+            let $likes = document.querySelector("#likes");
+            $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
+            
+            let $like_button = document.querySelector("#like_button");
+            if (d.likes.includes(storage.getItem("user_email")))
+                $like_button.innerText = "Retirar curtida";
+            else
+                $like_button.innerText = "Curtir";
+            $like_button.addEventListener("click", () => {
+                to_like(d, $likes, $like_button);
+            })
+
             let $back_button = document.querySelector("#back_button");
             $back_button.addEventListener("click", () => {
                 window.location.hash = "/home";
@@ -267,6 +278,22 @@ function load_campaign_view (campaign_url) {
                 $comment_input.value = "";
             });
         }
+    });
+}
+
+function to_like (campaign, $likes, $like_button) {
+    fetch (API + "/campaigns/" + campaign.url + "/likes", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => r.json())
+    .then (d => {
+        $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
+        if (d.likes.includes(storage.getItem("user_email")))
+            $like_button.innerText = "Retirar curtida";
+        else
+            $like_button.innerText = "Curtir";
     });
 }
 
@@ -290,7 +317,6 @@ function to_comment (url) {
 }
 
 function fetch_campaign_comments (url) {
-    console.log("fetching for: " + url);
     let $table = document.querySelector("#comments_table");
     $table.innerText = "";
     fetch (API + "/campaigns/" + url + "/comments", {
@@ -302,7 +328,6 @@ function fetch_campaign_comments (url) {
     )
     .then(d => {
         let i = 0;
-        console.log(d);
         d.forEach(element => {
             let $row = $table.insertRow(i);
 
@@ -334,14 +359,12 @@ function fetch_campaign_comments (url) {
 }
 
 function delete_comment(comment) {
-    console.log("email do user logado: " + storage.getItem("user_email"));
     fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id, {
         method:"DELETE",
         headers: {"Content-Type":"application/json",
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
-        console.log(r);
         return r.json();
     })
     .then (d => {
