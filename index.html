@@ -113,12 +113,18 @@
 
             <p id="description"></p>
 
-            <p id="progress"></p>
-
+            <div id="donations_div">
+                <p id="progress"></p>
+                <button id="donate_button">Realizar uma doação</button>
+                <button id="see_donations">Ver histórico de doações</button>
+            </div>
+            <br>
             <p id="deadline"></p>
 
-            <span id="likes"></span>
-            <button id="like_button"></button>
+            <div id="likes_div">
+                <span id="likes"></span>
+                <button id="like_button"></button>
+            </div>
 
             <br><br>
             <button id="back_button">Voltar à página inicial</button>
@@ -135,6 +141,23 @@
             </p>
 
         </div>
+    </template>
+
+    <template id="donate_view">
+        <h2 id="message_title"></h2>
+
+        <p>
+            Valor a ser doado<br>
+            R$<input id="donation_value" type="text" placeholder="R$XX,XX" value="0,00">
+        </p>
+
+        <p>
+            Confirme sua senha (falta fazer)<br>
+            <input id="password_confirmation" type="password">
+        </p>
+
+        <button id="confirm_donate_button">Confirmar doação</button>
+        <button id="back_to_campaign_button">Voltar para a página da campanha</button>
     </template>
 
     <template id="all_campaigns_view">

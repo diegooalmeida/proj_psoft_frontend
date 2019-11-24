@@ -2,7 +2,7 @@
 //TODO: reler e refarotrar o código para as rotas erradas ou com possível erro
 //      e tratar isso.
 
-const API = "http://localhost:8080";
+const API = "https://psoft-ajude-o-grupo-13.herokuapp.com";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
 let $message_div = document.querySelector("#message_div");
@@ -57,7 +57,10 @@ function init () {
         else if (window.location.hash.split("/")[2] === "all")
             load_all_campaigns_view();
         else
-            load_campaign_view(window.location.hash.split("/")[2]);
+            if ((window.location.hash.split("/")[3]) === undefined)
+                load_campaign_view(window.location.hash.split("/")[2]);
+            else if ((window.location.hash.split("/")[3]) === "donate")
+                load_donate_view_indirect(window.location.hash.split("/")[2]);
     }
 }
 
@@ -230,7 +233,7 @@ function load_campaign_view (campaign_url) {
     .then(d => {
         $message_div.innerHTML = "";
         if (d != undefined) {
-            // Campaign:
+            // Load campaign info:
             let $template = document.querySelector("#campaign_view");
             $body.innerHTML = $template.innerHTML;
 
@@ -245,6 +248,11 @@ function load_campaign_view (campaign_url) {
             let $progress = document.querySelector("#progress");
             $progress.innerText = "Progresso da campanha:\nR$" + 
                                     Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
+            let $donate_button = document.querySelector("#donate_button");
+            $donate_button.addEventListener("click", () => {
+                window.location.hash = "/campaigns/" + d.url + "/donate";
+                load_donate_view (d);
+            });
 
             let $deadline = document.querySelector("#deadline");
             $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
@@ -252,6 +260,7 @@ function load_campaign_view (campaign_url) {
             let $likes = document.querySelector("#likes");
             $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
             
+            // Load like options
             let $like_button = document.querySelector("#like_button");
             if (d.likes.includes(storage.getItem("user_email")))
                 $like_button.innerText = "Retirar curtida";
@@ -268,7 +277,7 @@ function load_campaign_view (campaign_url) {
             });
             $campaign.appendChild($back_button);
 
-            // Comments:
+            // Load comments info and options:
             fetch_campaign_comments(d.url);
 
             let $comment_button = document.querySelector("#comment_button");
@@ -278,6 +287,60 @@ function load_campaign_view (campaign_url) {
                 $comment_input.value = "";
             });
         }
+    });
+}
+
+function load_donate_view_indirect (url) {
+    fetch (API + "/campaigns/" + url, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        load_donate_view (d);
+    });
+}
+
+function load_donate_view (campaign) {
+
+    let $template = document.querySelector("#donate_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $message_title = document.querySelector("#message_title");
+    $message_title.innerText = "Fazer uma doação para: " + campaign.name;
+
+
+    let $confirm_donate_button = document.querySelector("#confirm_donate_button");
+    $confirm_donate_button.addEventListener("click", () => {
+        donate(campaign.url);
+    });
+
+    let $back_to_campaign_button = document.querySelector("#back_to_campaign_button");
+    $back_to_campaign_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/" + campaign.url;
+        init();
+    });
+}
+
+function donate (url) {
+    let $donation_value = document.querySelector("#donation_value");
+    let amount = $donation_value.value.replace(',','.').replace(' ','');
+    fetch (API + "/campaigns/" + url + "/donations", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")},
+        body:`{"amount":"${amount}"}`
+    })
+    .then (r => {
+        //TODO: tratar possíveis erros de not found ou unauthorized
+        return r.json();
+    })
+    .then (d => {
+        //todo: mensagem de sucesso na doação
+        window.location.hash = "/campaigns/" + d.campaign;
+        init();
     });
 }
 
