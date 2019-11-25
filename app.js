@@ -662,17 +662,27 @@ function create_campaign () {
     } else {
         $message_div.innerText = "";
         let campaign = create_campaign_object(name, description, deadline, goal);
+        let $message_span = document.querySelector("#message_span");
         fetch (API + "/campaigns/create", {
             method:"POST",
             headers: {"Content-Type":"application/json",
                       "Authorization":"Bearer " + storage.getItem("token")},
             body: JSON.stringify(campaign)
         })
-        .then(r => r.json())
+        .then(r => {
+            console.log(r);
+            if (r.status === 403)
+                $message_span.innerText = "Já existe uma campanha com esse nome, tente outro"
+            else {
+                $message_span.innerText = "";
+                return r.json();
+            }
+        })
         .then(d => {
-
-            window.location.hash = "/campaigns/" + d.url;
-            init();
+            if (d !== undefined) {
+                window.location.hash = "/campaigns/" + d.url;
+                init();
+            }
         });
     }
 }
