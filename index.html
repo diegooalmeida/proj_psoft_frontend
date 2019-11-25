@@ -60,7 +60,20 @@
         <div id="user_info_div">
             <p id="user_name"></p>
             <p id="user_email"></p>
-            <p>Resto</p>
+            
+            <br>
+            <input type="text" id="search_input" placeholder="Procurar uma campanha...">
+            <br>
+            <p>Campanhas do usuário:
+                <table id="user_campaigns_table">
+                </table>
+            </p> 
+
+            <p>Campanhas que o usuário contribuiu:
+                <table id="campaigns_user_donated_table">
+                </table> 
+            </p>
+
         </div>
 
         <button id="back_button">Voltar</button>
@@ -122,6 +135,7 @@
     <template id="campaign_view">
         <div id="campaign_div">
             <h2 id="name"></h2>
+            <h3 id="owner"></h3>
 
             <p id="description"></p>
 
@@ -143,16 +157,33 @@
         </div>
         
         <div id="comments_div">
+
             <h3>Comentários</h3>
-            <table id="comments_table">
-            </table> 
             <p>
                 Escreva um comentário (máximo de 150 caracteres)<br>
                 <textarea id="comment_input" cols="30" rows="4" maxlength="150"></textarea>
                 <button id="comment_button">Comentar</button>
             </p>
 
+            <table id="comments_table">
+            </table> 
+
         </div>
+    </template>
+
+    <template id="answer_view">
+        <h2 id="campaign_name"></h2>
+        <button id="back_button">Voltar para a página da campanha</button>
+        <h3 id="comment_info">:</h3>
+        <p>
+            Escreva uma resposta (máximo de 150 caracteres)<br>
+            <textarea id="answer_input" cols="30" rows="4" maxlength="150"></textarea>
+            <button id="answer_button">Responder</button>
+        </p>
+
+        <h4>Respostas:</h4>
+        <table id="answers_table"></table>
+
     </template>
 
     <template id="donate_view">

@@ -1,4 +1,3 @@
-//TODO: testar listagem com as ordenações
 //TODO: reler e refarotrar o código para as rotas erradas ou com possível erro
 //      e tratar isso.
 
@@ -243,6 +242,9 @@ function load_campaign_view (campaign_url) {
 
             let $name = document.querySelector("#name");
             $name.innerText = d.name;
+
+            let $owner = document.querySelector("#owner");
+            $owner.innerText = "Criada por: " + d.owner;
             
             let $description = document.querySelector("#description");
             $description.innerText = d.description;
@@ -284,9 +286,10 @@ function load_campaign_view (campaign_url) {
 
             let $comment_button = document.querySelector("#comment_button");
             $comment_button.addEventListener("click", () => {
-                to_comment(d.url);
                 let $comment_input = document.querySelector("#comment_input");
+                let text = $comment_input.value;
                 $comment_input.value = "";
+                to_comment(d.url, text);
             });
         }
     });
@@ -362,13 +365,12 @@ function to_like (campaign, $likes, $like_button) {
     });
 }
 
-function to_comment (url) {
-    let $comment_text = document.querySelector("#comment_input");
+function to_comment (url, text) {
     fetch (API + "/campaigns/" + url + "/comments", {
         method:"POST",
         headers: {"Content-Type":"application/json",
         "Authorization":"Bearer " + storage.getItem("token")},
-        body:`{"text":"${$comment_text.value}"}`
+        body:`{"text":"${text}"}`
     })
     .then (r => {
         //todo: tratar possíveis erros como 404 para uma camapnha que não existe
@@ -402,11 +404,14 @@ function fetch_campaign_comments (url) {
 
             $cell1.innerText = element.owner + " diz: ";
             $cell2.innerText = element.text;
-            let $answers_button = document.createElement("BUTTON");
-            $answers_button.innerText = "Responder";
+            let $answer_button = document.createElement("BUTTON");
+            $answer_button.innerText = "Responder";
+            $answer_button.addEventListener("click", () => {
+                load_answer_view(element);
+            });
 
             $cell3.appendChild(document.createElement("BR"));
-            $cell3.appendChild($answers_button);
+            $cell3.appendChild($answer_button);
 
             let logged_user_email = storage.getItem("user_email");
             if (logged_user_email === element.owner) {
@@ -423,7 +428,101 @@ function fetch_campaign_comments (url) {
     });
 }
 
-function delete_comment(comment) {
+function load_answer_view (comment) {
+    let $template = document.querySelector("#answer_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $campaign_name = document.querySelector("#campaign_name");
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        load_campaign_view(comment.campaign);
+    });
+
+    let $comment_info = document.querySelector("#comment_info");
+
+    $campaign_name.innerText = comment.campaign;
+    $comment_info.innerText = comment.owner + " diz: " + comment.text;
+
+    let $answer_button = document.querySelector("#answer_button");
+    $answer_button.addEventListener("click", () => {
+        let $answer_input = document.querySelector("#answer_input");
+        let text = $answer_input.value;
+        $answer_input.value = "";
+        to_answer(comment, text);
+    });
+
+    fetch_comment_answers(comment);
+}
+
+function to_answer (comment, text) {
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")},
+        body:`{"text":"${text}"}`
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        fetch_comment_answers(comment);
+    })
+}
+
+function fetch_comment_answers (comment) {
+    let $table = document.querySelector("#answers_table");
+    $table.innerText = "";
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
+        method:"GET",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then(r => {
+        return r.json()
+    })
+    .then(d => {
+        let i = 0;
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+
+            $cell1.innerText = element.owner + " diz: ";
+            $cell2.innerText = element.text;
+
+            let logged_user_email = storage.getItem("user_email");
+            if (logged_user_email === element.owner) {
+                let $cell3 = $row.insertCell(2);
+                let $delete_answer_button = document.createElement("BUTTON");
+                $delete_answer_button.innerText = "Deletar resposta";
+                $delete_answer_button.addEventListener("click", () => {
+                    delete_answer(comment, element);
+                });
+                $cell3.appendChild(document.createElement("BR"));
+                $cell3.appendChild($delete_answer_button);
+            }
+        })
+    });
+}
+
+function delete_answer (comment, answer) {
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + answer.id, {
+        method:"DELETE",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        fetch_comment_answers(comment);
+    });
+}
+
+
+function delete_comment (comment) {
     fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id, {
         method:"DELETE",
         headers: {"Content-Type":"application/json",
@@ -666,6 +765,8 @@ function load_profile_page (email) {
     })
 
     fetch_user(email);
+
+    ///
 }
 
 function fetch_user (email) {
