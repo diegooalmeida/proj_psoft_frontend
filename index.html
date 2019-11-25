@@ -16,7 +16,6 @@
     </div>
     <div id="top"></div>
     <hr>
-    <h2>Campanhas (mudar esse título de lugar no index.html)</h2>
     <div id="body"></div>
     <hr>
     <footer>
@@ -60,23 +59,26 @@
         <div id="user_info_div">
             <p id="user_name"></p>
             <p id="user_email"></p>
+        
+            <button id="back_button">Voltar</button>
             
             <br>
+            <h3>Campanhas relacionadas</h3>
             <input type="text" id="search_input" placeholder="Procurar uma campanha...">
             <br>
-            <p>Campanhas do usuário:
+            <p>
+                <h4>Campanhas do usuário:</h4>
                 <table id="user_campaigns_table">
                 </table>
             </p> 
 
-            <p>Campanhas que o usuário contribuiu:
+            <p>
+                <h4>Campanhas que o usuário contribuiu:</h4>
                 <table id="campaigns_user_donated_table">
                 </table> 
             </p>
 
         </div>
-
-        <button id="back_button">Voltar</button>
     </template>
 
     <template id="logged_view">
@@ -87,12 +89,13 @@
     </template>
 
     <template id="home_view">
+        <h2>Campanhas</h2>
         <div id="campaigns_options">
             <button id="create_campaign">Criar nova campanha</button>
             <button id="list_all_campaigns">Listar todas as campanhas</button>
         </div>
 
-        <h3>Campanhas ativas mais famosas</h3>
+        <h3>Top 5 campanhas</h3>
 
         <p>
             Mostrar apenas:
@@ -212,6 +215,7 @@
     </template>
 
     <template id="all_campaigns_view">
+        <h2>Todas as campanhas</h2>
         <button id="back_button">Voltar à página inicial</button><br>
         <p>
             Mostrar apenas:

@@ -42,6 +42,8 @@ function init () {
     if (window.location.hash === "") 
         window.location.hash = "/home"
 
+
+    console.log(window.location.hash.split("/"));
     // Body of the site
     if (window.location.hash === "#/home")
         load_home_view();
@@ -62,7 +64,9 @@ function init () {
             if ((window.location.hash.split("/")[3]) === undefined)
                 load_campaign_view(window.location.hash.split("/")[2]);
             else if ((window.location.hash.split("/")[3]) === "donate")
-                load_donate_view_indirect(window.location.hash.split("/")[2]);
+                load_donate_view_indirectly(window.location.hash.split("/")[2]);
+            else if ((window.location.hash.split("/")[3]) === "donations")
+                load_donations_history_view_indirectly(window.location.hash.split("/")[2]);
     }
 }
 
@@ -260,7 +264,8 @@ function load_campaign_view (campaign_url) {
             });
             let $see_donations_button = document.querySelector("#see_donations_button");
             $see_donations_button.addEventListener("click", () => {
-                load_donate_history(d);
+                window.location.hash = "/campaigns/" + d.url + "/donations";
+                load_donate_history_view(d);
             });
 
             let $deadline = document.querySelector("#deadline");
@@ -300,7 +305,7 @@ function load_campaign_view (campaign_url) {
     });
 }
 
-function load_donate_history (campaign) {
+function load_donations_history_view (campaign) {
     let $template = document.querySelector("#doante_history_view");
     $body.innerHTML = $template.innerHTML;
 
@@ -312,12 +317,23 @@ function load_donate_history (campaign) {
     });
     $campaign_name.innerText = campaign.name;
 
-    fetch_donations_history (campaign);
+    load_donations_history (campaign);
 }
 
-//TODO: pegar as doações prontas
+function load_donations_history_view_indirectly (url) {
+    fetch (API + "/campaigns/" + url, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        load_donations_history_view (d);
+    });
+}
 
-function fetch_donations_history (campaign) {
+function load_donations_history (campaign) {
     let $table = document.querySelector("#donations_table");
     $table.innerText = "";
     fetch (API + "/campaigns/" + campaign.url + "/donations", {
@@ -360,19 +376,6 @@ function fetch_donations_history (campaign) {
     });
 }
 
-function load_donate_view_indirect (url) {
-    fetch (API + "/campaigns/" + url, {
-        "method":"GET",
-        "headers":{"Content-Type":"application/json"}
-    })
-    .then (r => {
-        return r.json();
-    })
-    .then (d => {
-        load_donate_view (d);
-    });
-}
-
 function load_donate_view (campaign) {
 
     let $template = document.querySelector("#donate_view");
@@ -392,6 +395,20 @@ function load_donate_view (campaign) {
         window.location.hash = "/campaigns/" + campaign.url;
         init();
     });
+}
+
+function load_donate_view_indirectly (url) {
+    fetch (API + "/campaigns/" + url, {
+        method:"GET",
+        headers: {"Content-Type":"application/json",
+        "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        load_donate_view (d);
+    })
 }
 
 function donate (url) {
