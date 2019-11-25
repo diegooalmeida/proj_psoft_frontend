@@ -258,6 +258,10 @@ function load_campaign_view (campaign_url) {
                 window.location.hash = "/campaigns/" + d.url + "/donate";
                 load_donate_view (d);
             });
+            let $see_donations_button = document.querySelector("#see_donations_button");
+            $see_donations_button.addEventListener("click", () => {
+                load_donate_history(d);
+            });
 
             let $deadline = document.querySelector("#deadline");
             $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
@@ -291,6 +295,66 @@ function load_campaign_view (campaign_url) {
                 let text = $comment_input.value;
                 $comment_input.value = "";
                 to_comment(d.url, text);
+            });
+        }
+    });
+}
+
+function load_donate_history (campaign) {
+    let $template = document.querySelector("#doante_history_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $campaign_name = document.querySelector("#campaign_name");
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        load_campaign_view(campaign.url);
+    });
+    $campaign_name.innerText = campaign.name;
+
+    fetch_donations_history (campaign);
+}
+
+//TODO: pegar as doações prontas
+
+function fetch_donations_history (campaign) {
+    let $table = document.querySelector("#donations_table");
+    $table.innerText = "";
+    fetch (API + "/campaigns/" + campaign.url + "/donations", {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r =>{
+        console.log(r);
+        return r.json();
+    })
+    .then (d => {
+        console.log(d);
+        if (d.length === 0) {
+            // TODO
+        } else {
+            let i = 0;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+
+                $cell1.innerText = element.owner;
+                $cell2.innerText = "R$" + element.amount;
+                $cell3.innerText = element.date;
+
+                let $user_button = document.createElement("BUTTON");
+                $user_button.innerText = "Ver página do usuário";
+                $user_button.addEventListener("click", () => {
+                    window.location.hash = "/users/" + element.owner;
+                    init();
+                });
+                $cell4.appendChild($user_button);
+
+                i++;
             });
         }
     });
@@ -872,7 +936,6 @@ function fetch_user_campaigns(email, substring) {
         }
     });
 }
-
 
 function fetch_user_info (email) {
     fetch (API + "/users/" + email, {

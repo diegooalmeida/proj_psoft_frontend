@@ -142,7 +142,7 @@
             <div id="donations_div">
                 <p id="progress"></p>
                 <button id="donate_button">Realizar uma doação</button>
-                <button id="see_donations">Ver histórico de doações</button>
+                <button id="see_donations_button">Ver histórico de doações</button>
             </div>
             <br>
             <p id="deadline"></p>
@@ -171,10 +171,18 @@
         </div>
     </template>
 
+    <template id="doante_history_view">
+        <h2 id="campaign_name"></h2>
+        <button id="back_button">Voltar para a página da campanha</button>
+        
+        <h3>Histórico de doações</h3>
+        <table id="donations_table"></table>
+    </template>
+
     <template id="answer_view">
         <h2 id="campaign_name"></h2>
         <button id="back_button">Voltar para a página da campanha</button>
-        <h3 id="comment_info">:</h3>
+        <h3 id="comment_info"></h3>
         <p>
             Escreva uma resposta (máximo de 150 caracteres)<br>
             <textarea id="answer_input" cols="30" rows="4" maxlength="150"></textarea>
