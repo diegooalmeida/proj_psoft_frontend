@@ -6,6 +6,7 @@ let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
 let $message_div = document.querySelector("#message_div");
 let storage = window.localStorage;
+let globalTimeout = null;
 
 init();
 
@@ -521,7 +522,6 @@ function delete_answer (comment, answer) {
     });
 }
 
-
 function delete_comment (comment) {
     fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id, {
         method:"DELETE",
@@ -764,12 +764,117 @@ function load_profile_page (email) {
         init();
     })
 
-    fetch_user(email);
+    //TODO: NÃO PRECISA DE FETCH, TA SALVO NO BROWSER
+    fetch_user_info(email);
 
-    ///
+    let $search_input = document.querySelector("#search_input");
+
+    fetch_user_campaigns(email, "");
+    fetch_campaigns_user_donated (email, "");
+   
+    $search_input.addEventListener("keyup", () => {
+        if(globalTimeout != null) clearTimeout(globalTimeout); 
+        globalTimeout = setTimeout(() => {
+            fetch_user_campaigns(email, $search_input.value);
+            fetch_campaigns_user_donated (email, $search_input.value);
+        },500);
+    });
 }
 
-function fetch_user (email) {
+function fetch_campaigns_user_donated (email, substring) {
+    globalTimeout = null;
+    let route;
+    if (substring === "")
+        route = API + "/users/" + email + "/campaignsDonated";
+    else
+        route = API + "/users/" + email + "/campaignsDonated/" + substring;
+
+    let $table = document.querySelector("#campaigns_user_donated_table");
+    fetch (route, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => r.json())
+    .then (d => {
+        $table.innerHTML = "";
+        if (d.length === 0) {
+            // TODO
+        } else {
+            let i = 0;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+
+                $cell1.innerText = element.name;
+                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
+                $cell3.innerText = element.deadline;
+
+                let $campaign_button = document.createElement("BUTTON");
+                $campaign_button.innerText = "Ver página da campanha";
+                $campaign_button.addEventListener("click", () => {
+                    window.location.hash = "/campaigns/" + element.url;
+                    init();
+                });
+                $cell4.appendChild($campaign_button);
+
+                i++;
+            });
+        }
+    });
+}
+
+function fetch_user_campaigns(email, substring) {
+    globalTimeout = null;
+    let route;
+    if (substring === "")
+        route = API + "/users/" + email + "/campaigns";
+    else
+        route = API + "/users/" + email + "/campaigns/" + substring;
+
+    let $table = document.querySelector("#user_campaigns_table");
+    fetch (route, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => r.json())
+    .then (d => {
+        $table.innerHTML = "";
+        if (d.length === 0) {
+            // TODO
+        } else {
+            let i = 0;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+
+                $cell1.innerText = element.name;
+                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
+                $cell3.innerText = element.deadline;
+
+                let $campaign_button = document.createElement("BUTTON");
+                $campaign_button.innerText = "Ver página da campanha";
+                $campaign_button.addEventListener("click", () => {
+                    window.location.hash = "/campaigns/" + element.url;
+                    init();
+                });
+                $cell4.appendChild($campaign_button);
+
+                i++;
+            });
+        }
+    });
+}
+
+
+function fetch_user_info (email) {
     fetch (API + "/users/" + email, {
         method:"GET",
         headers: {"Content-Type":"application/json"}
