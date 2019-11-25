@@ -51,6 +51,8 @@ function init () {
     else if (window.location.hash === "#/sign-in")
         load_sign_in_view();
     // Body
+    else if (window.location.hash.split("/")[1] === "users")
+        load_profile_page(window.location.hash.split("/")[2]);
     else if (window.location.hash.split("/")[1] === "campaigns") {
         if (window.location.hash.split("/")[2] === "create")
             load_create_campaign_view();
@@ -653,12 +655,48 @@ function load_not_logged_view () {
     });
 }
 
+function load_profile_page (email) {
+    let $template = document.querySelector("#profile_page");
+    $body.innerHTML = $template.innerHTML;
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        window.location.hash = "/home";
+        init();
+    })
+
+    fetch_user(email);
+}
+
+function fetch_user (email) {
+    fetch (API + "/users/" + email, {
+        method:"GET",
+        headers: {"Content-Type":"application/json"}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        let $user_name = document.querySelector("#user_name");
+        $user_name.innerText = d.fname + " " + d.lname;
+
+        let $user_email = document.querySelector("#user_email");
+        $user_email.innerText = d.email;
+    });
+}
+
 function load_logged_view () {
     let $template = document.querySelector("#logged_view");
     $top.innerHTML = $template.innerHTML;
 
-    let $button = document.querySelector("#logout_button");
-    $button.addEventListener("click", () => {
+    let $load_profile_page_button = document.querySelector("#load_profile_page_button");
+    $load_profile_page_button.addEventListener("click", () => {
+        window.location.hash = "/users/" + storage.getItem("user_email");
+        init();
+    });
+
+    let $logout_button = document.querySelector("#logout_button");
+    $logout_button.addEventListener("click", () => {
         storage.setItem("user_email", null);
         storage.setItem("token", null);
         cancel();
