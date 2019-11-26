@@ -1,6 +1,10 @@
 //TODO: reler e refarotrar o código para as rotas erradas ou com possível erro
 //      e tratar isso.
 
+// TODO: mudar a listagem do top 5 pra exigir login para primeira filtragem.
+// TODO: resolver bug que a listagem de TODOS os status está deixando uma campanha de fora.
+
+
 const API = "https://psoft-ajude-o-grupo-13.herokuapp.com";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
@@ -60,6 +64,10 @@ function init () {
             load_create_campaign_view();
         else if (window.location.hash.split("/")[2] === "all")
             load_all_campaigns_view();
+        else if (window.location.hash.split("/")[2] === "filtered-by")
+            load_filtered_campaigns_view(window.location.hash.split("/")[3],
+            window.location.hash.split("/")[4],
+            window.location.hash.split("/")[5]);
         else
             if ((window.location.hash.split("/")[3]) === undefined)
                 load_campaign_view(window.location.hash.split("/")[2]);
@@ -83,18 +91,83 @@ function load_all_campaigns_view () {
     let $search_input = document.querySelector("#search_input");
     let $campaigns_filter = document.querySelector("#campaigns_filter");
     let $sort_parameter = document.querySelector("#sort_parameter");
+    let $search_campaigns_button = document.querySelector("#search_campaigns_button");
 
-    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
    
-    $search_input.addEventListener("keyup", () => {
-        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    $search_campaigns_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
+        load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     });
+    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+
     $campaigns_filter.onchange = function() {
         fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     };
     $sort_parameter.onchange = function() {
         fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     };
+}
+
+function load_filtered_campaigns_view (sort, status, substring) {
+    let $template = document.querySelector("#filtered_campaigns_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let status_filter;
+    if (status === "active")
+        status_filter = "Listando campanhas ativas";
+    else if (status === "concluded")
+        status_filter = "Listando campanhas concluídas";
+    else if (status === "expired")
+        status_filter = "Listando campanhas vencidas";
+    else
+        status_filter = "Listando todas as campanhas"
+
+    let sort_filter;
+    if (sort === "likes")
+        sort_filter = "curtidas";
+    else if (sort === "deadline")
+        sort_filter = "data de vencimento";
+    else
+        sort_filter = "doações";
+
+    let $message_title = document.querySelector("#message_title");
+    $message_title.innerText = status_filter + " que contém a palavra: " + substring +
+                                ", ordenadas por " + sort_filter;
+    let $message_p = document.querySelector("#message_p");
+    $message_p.innerText = "Para alterar os critérios de listagem, volte para a página anterior.";
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/all";
+        init();
+    });
+
+    fetch_campaigns(sort, status, substring);
+
+    let $search_input = document.querySelector("#search_input")
+    $search_input.addEventListener("keyup", refresh_filtered_campaigns_table);
+}
+
+function refresh_filtered_campaigns_table () {
+     // Declare variables
+     var input, filter, table, tr, td, i, txtValue;
+     input = document.querySelector("#search_input").value
+     filter = input.toUpperCase();
+     table = document.getElementById("campaigns_table");
+     tr = table.getElementsByTagName("tr");
+ 
+     // Loop through all table rows, and hide those who don't match the search query
+     for (i = 0; i < tr.length; i++) {
+         td = tr[i].getElementsByTagName("td")[0];
+         if (td) {
+             txtValue = td.textContent || td.innerText;
+             if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                 tr[i].style.display = "";
+             } else {
+                 tr[i].style.display = "none";
+             }
+         }
+     }
 }
 
 function fetch_campaigns(sort, status, substring) {
@@ -141,6 +214,7 @@ function fetch_campaigns(sort, status, substring) {
         }
     });
 }
+
 
 function load_home_view () {
     let $template = document.querySelector("#home_view");
@@ -253,6 +327,9 @@ function load_campaign_view (campaign_url) {
             
             let $description = document.querySelector("#description");
             $description.innerText = d.description;
+
+            let $status = document.querySelector("#status");
+            $status.innerText = "Status: " + d.status;
 
             let $progress = document.querySelector("#progress");
             $progress.innerText = "Progresso da campanha:\nR$" + 

@@ -145,6 +145,8 @@
 
             <p id="description"></p>
 
+            <p id="status"></p>
+
             <div id="donations_div">
                 <p id="progress"></p>
                 <button id="donate_button">Realizar uma doação</button>
@@ -235,10 +237,23 @@
                 <option value="donations">Doações</option>
             </select>
         </p>
-        <input type="text" id="search_input" placeholder="Procurar uma campanha..."> <br><br>
+        <input type="text" id="search_input" placeholder="Procurar uma campanha...">
+        <button id="search_campaigns_button">Procurar</button>
+        <br><br>
         Campanha Doações Término <br>
         <table id="campaigns_table">
         </table> 
     </template>
+
+    <template id="filtered_campaigns_view">
+        <h2 id="message_title"></h2>
+        <p id="message_p"></p>
+        <button id="back_button">Voltar</button>
+        <br>
+        <br>
+        <input type="text" id="search_input", placeholder="Refinar busca...">
+        <table id="campaigns_table"></table>
+    </template>
+
 </body>
 </html>
