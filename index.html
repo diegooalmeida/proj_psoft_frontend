@@ -98,7 +98,7 @@
         <h3>Top 5 campanhas</h3>
 
         <p>
-            Mostrar apenas:
+            Procurar apenas:
             <select id="campaigns_filter">
                 <option value="active">Ativas</option>
                 <option value="concluded">Concluídas</option>
@@ -112,7 +112,9 @@
                 <option value="donations">Doações</option>
             </select>
         </p>
-        <input type="text" id="search_input" placeholder="Procurar uma campanha..."> <br><br>
+        <input type="text" id="search_input" placeholder="Procurar uma campanha...">
+        <button id="search_campaigns_button">Procurar</button>
+        <br><br>
         Campanha Doações Término <br>
         <table id="top_5_table">
         </table> 
@@ -223,7 +225,7 @@
         <h2>Todas as campanhas</h2>
         <button id="back_button">Voltar à página inicial</button><br>
         <p>
-            Mostrar apenas:
+            Procurar apenas:
             <select id="campaigns_filter">
                 <option value="active">Ativas</option>
                 <option value="concluded">Concluídas</option>

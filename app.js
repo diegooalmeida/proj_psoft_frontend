@@ -1,8 +1,8 @@
 //TODO: reler e refarotrar o código para as rotas erradas ou com possível erro
 //      e tratar isso.
 
-// TODO: mudar a listagem do top 5 pra exigir login para primeira filtragem.
-// TODO: resolver bug que a listagem de TODOS os status está deixando uma campanha de fora.
+// TODO: exigir login para primeira filtragem.
+// TODO: resolver bug que a listagem do status "TODAS" está deixando uma campanha de fora.
 
 
 const API = "https://psoft-ajude-o-grupo-13.herokuapp.com";
@@ -45,9 +45,6 @@ function init () {
 
     if (window.location.hash === "") 
         window.location.hash = "/home"
-
-
-    console.log(window.location.hash.split("/"));
     // Body of the site
     if (window.location.hash === "#/home")
         load_home_view();
@@ -99,13 +96,12 @@ function load_all_campaigns_view () {
         window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
         load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     });
-    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
 
     $campaigns_filter.onchange = function() {
-        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
     };
     $sort_parameter.onchange = function() {
-        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
     };
 }
 
@@ -131,9 +127,15 @@ function load_filtered_campaigns_view (sort, status, substring) {
     else
         sort_filter = "doações";
 
+    let message;
+    if (substring === "")
+        message = status_filter + ", ordenadas por " + sort_filter;
+    else
+        message = status_filter + " que contém a palavra: " + substring +
+                    ", ordenadas por " + sort_filter;
+
     let $message_title = document.querySelector("#message_title");
-    $message_title.innerText = status_filter + " que contém a palavra: " + substring +
-                                ", ordenadas por " + sort_filter;
+    $message_title.innerText = message;
     let $message_p = document.querySelector("#message_p");
     $message_p.innerText = "Para alterar os critérios de listagem, volte para a página anterior.";
     let $back_button = document.querySelector("#back_button");
@@ -215,7 +217,6 @@ function fetch_campaigns(sort, status, substring) {
     });
 }
 
-
 function load_home_view () {
     let $template = document.querySelector("#home_view");
     $body.innerHTML = $template.innerHTML;
@@ -235,30 +236,30 @@ function load_home_view () {
     let $search_input = document.querySelector("#search_input");
     let $campaigns_filter = document.querySelector("#campaigns_filter");
     let $sort_parameter = document.querySelector("#sort_parameter");
+    let $search_campaigns_button = document.querySelector("#search_campaigns_button");
 
-    fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value);
    
-    $search_input.addEventListener("keyup", () => {
-        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    $search_campaigns_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
+        load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
     });
+
+    // aqui podemos não alterar a listagem, pois o usuário pode não estar logado.
+    // então, esses filtros serviviram apenas quando o botão fosse pressionado.
+    // a especificação não diz nada sobre isso, apenas sobre o filtro de substring...
     $campaigns_filter.onchange = function() {
-        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value);
     };
     $sort_parameter.onchange = function() {
-        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+        fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value);
     };
-
 }
 
-function fetch_top_5_campaigns (sort, status, substring) {
-    let route;
-    if (substring === "")
-        route = API + "/campaigns/top-5/filter-by/" + sort + "/" + status;
-    else
-        route = API + "/campaigns/top-5/filter-by/" + sort + "/" + status + "/" + substring;
+function fetch_top_5_campaigns (sort, status) {
     let $table = document.querySelector("#top_5_table");
     $table.innerText = "";
-    fetch (route, {
+    fetch (API + "/campaigns/top-5/filter-by/" + sort + "/" + status, {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
     })
@@ -418,11 +419,9 @@ function load_donations_history (campaign) {
         "headers":{"Content-Type":"application/json"}
     })
     .then (r =>{
-        console.log(r);
         return r.json();
     })
     .then (d => {
-        console.log(d);
         if (d.length === 0) {
             // TODO
         } else {
@@ -747,7 +746,6 @@ function create_campaign () {
             body: JSON.stringify(campaign)
         })
         .then(r => {
-            console.log(r);
             if (r.status === 403)
                 $message_span.innerText = "Já existe uma campanha com esse nome, tente outro"
             else {
@@ -779,8 +777,6 @@ function is_in_the_past (date) {
     else 
         return true;
 }
-
-// ********** TOP OF THE PAGE **********
 
 function is_logged () {
     if (storage.getItem("token") === "null") return false;
@@ -1086,7 +1082,7 @@ function load_logged_view () {
     })
     .then(r => {
 
-        if (r.status === 403) {
+        if (r.status === 403 || r.status === 500) {
             storage.setItem("token", null);
             init();
         } else 
