@@ -108,6 +108,7 @@
         <p>Primeiro nome<br> <input id="fname" type="text"></p>
         <p>Último nome<br> <input id="lname" type="text"></p>
         <p>Senha<br> <input id="password" type="password"></p>
+        <span id="password_too_small_message"></span>
         <p>Confirmar senha<br> <input id="confirm_password" type="password"></p>
         <span id="password_dont_match_message"></span>
         <p>Cartão de crédito<br> <input id="credit_card" type="text"></p>
@@ -189,8 +190,12 @@
             <br>
             <span id="invalid_deadline_message"></span>
         </p>
-        <p>Meta<br>R$
-            <input id="goal" type="text" placeholder="R$XX,XX" value="0,00"></p>
+        <p>
+            Meta<br>R$
+            <input id="goal" type="text" placeholder="R$XX,XX" value="0,00">
+            <br>
+            <span id="invalid_goal_message"></span>
+        </p>
         <button id="create_campaign_button">Criar campanha</button>
         <button id="cancel">Cancelar</button>
     </template>
@@ -326,6 +331,8 @@
         <p>
             Valor a ser doado<br>
             R$<input id="donation_value" type="text" placeholder="R$XX,XX" value="0,00">
+            <br>
+            <span id="invalid_donation_message"></span>
         </p>
 
         <p>

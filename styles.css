@@ -29,3 +29,15 @@
 #message_span {
     color:red;
 }
+
+#password_too_small_message {
+    color:red;
+}
+
+#invalid_goal_message {
+    color:red;
+}
+
+#invalid_donation_message {
+    color:red;
+}

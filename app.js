@@ -604,6 +604,7 @@ function sign_in () {
 function sign_up () {
 
     let $email_already_exists_message = document.querySelector("#email_already_exists_message");
+    let $password_too_small_message = document.querySelector("#password_too_small_message");
     let $password_dont_match_message = document.querySelector("#password_dont_match_message");
     let email = document.querySelector("#email").value;
     let fname = document.querySelector("#fname").value;
@@ -614,10 +615,16 @@ function sign_up () {
 
     let user = create_user_object(email, fname, lname, password, credit_card);
 
-    if (password !== confirm_password) {
+    if (password.length < 3) {
         $email_already_exists_message.innerText = "";
-        password_dont_match_message.innerText = "As senhas não coincidem";
-    } 
+        $password_too_small_message.innerText = "Senha muito curta, digite uma senha de no mínimo 3 caracteres.";
+        password_dont_match_message.innerText = "";
+    }
+    else if (password !== confirm_password) {
+        $email_already_exists_message.innerText = "";
+        $password_too_small_message.innerText = "";
+        $password_dont_match_message.innerText = "As senhas não coincidem";
+    }
     else {
         fetch(API + "/users", {
             method:"POST",
@@ -627,7 +634,8 @@ function sign_up () {
         .then(r => {
             if (r.ok) return r.json();
             else {
-                password_dont_match_message.innerText = "";
+                $password_too_smallmessage.innerText = "";
+                $password_dont_match_message.innerText = "";
                 $email_already_exists_message.innerText = "Email já cadastrado";
             }
         })
@@ -739,10 +747,17 @@ function create_campaign () {
     let deadline = document.querySelector("#deadline").value;
     let goal = document.querySelector("#goal").value.replace(',','.').replace(' ','');
     let $invalid_deadline_message = document.querySelector("#invalid_deadline_message");
+    let $invalid_goal_message = document.querySelector("#invalid_goal_message");
 
     if (deadline.length !== 10 || is_in_the_past(deadline) || !valid_date(deadline)) {
         $invalid_deadline_message.innerText = "Data inválida. Escreva uma data no formato dd/mm/yyyy e que ainda não tenha se passado.";
+        $invalid_goal_message.innerText = "";
+    }
+    else if (parseInt(goal) <= 0) {
+        $invalid_goal_message.innerText = "Meta inválida. Digite uma meta maior que 0.";
+        $invalid_deadline_message.innerText = "";
     } else {
+        $invalid_goal_message.innerText = "";
         $invalid_deadline_message.innerText = "";
         let campaign = create_campaign_object(name, description, deadline, goal);
         let $message_span = document.querySelector("#message_span");
@@ -1060,12 +1075,21 @@ function load_donate_view (campaign) {
 
 function donate (url) {
     let password_confirmation = document.querySelector("#password_confirmation").value;
-    if (password_confirmation !== storage.getItem("user_password")) {
+
+    let $donation_value = document.querySelector("#donation_value");
+    let amount = $donation_value.value.replace(',','.').replace(' ','');
+
+    let $wrong_password_message = document.querySelector("#wrong_password_message");
+    let $invalid_donation_message = document.querySelector("#invalid_donation_message");
+    
+    if (amount <= 0) {
+        $invalid_donation_message.innerText = "Valor de doação inválido. Você precisa doar um valor maior do que 0.";
+        $wrong_password_message.innerText = ""
+    } else if (password_confirmation !== storage.getItem("user_password")) {
         let $wrong_password_message = document.querySelector("#wrong_password_message");
         $wrong_password_message.innerText = "Senha incorreta. Tente novamente.";
+        $invalid_donation_message.innerText = ""
     } else {
-        let $donation_value = document.querySelector("#donation_value");
-        let amount = $donation_value.value.replace(',','.').replace(' ','');
         fetch (API + "/campaigns/" + url + "/donations", {
             method:"POST",
             headers: {"Content-Type":"application/json",
