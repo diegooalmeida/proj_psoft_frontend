@@ -680,8 +680,8 @@ function load_profile_page (email) {
     $search_input.addEventListener("keyup", () => {
         if(globalTimeout != null) clearTimeout(globalTimeout); 
         globalTimeout = setTimeout(() => {
-            fetch_user_campaigns(email, $search_input.value);
-            fetch_campaigns_user_donated (email, $search_input.value);
+            fetch_user_campaigns(email, $search_input.value.toLowerCase());
+            fetch_campaigns_user_donated (email, $search_input.value.toLowerCase());
         },500);
     });
 }
