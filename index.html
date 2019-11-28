@@ -12,9 +12,7 @@
             <p>Aqui Juntos Doando Esperança</p>
     </header>
     <hr>
-    <div id="message_div">
-            <p id="message"></p>
-    </div>
+    <div id="message_div"></div>
     <div id="top"></div>
     <hr>
     <div id="notification_div"></div>
@@ -35,8 +33,11 @@
     </footer>
 
     <template id="page_not_found_view">
-        <p id="not_found_message"></p>
-        <p>Tenha certeza de que o link que está tentando acessar um link válido e tente novamente.</p>
+        <h3 id="not_found_message"></h3>
+        <h3>
+            Tenha certeza de está tentando acessar um link
+            válido e tente novamente.
+        </h3>
         <button id="back_button">Voltar para a página principal</button>
     </template>
 
@@ -85,7 +86,15 @@
         <button id="search_campaigns_button">Procurar</button>
         <p id="message_login_required_2"></p>
         <br>
-        Campanha Doações Término <br>
+        <table>
+            <tr id="base_row" class="header">
+                <th style="width:250px;">Campanha</th>
+                <th style="width:250px">Criada por</th>
+                <th style="width:125px">Doações</th>
+                <th style="width:125px">Data de vencimento</th>
+            </tr>
+        </table>
+        <br>
         <table id="top_5_table">
         </table> 
 
@@ -133,12 +142,28 @@
             <input type="text" id="search_input" placeholder="Procurar uma campanha...">
             <br>
             <p>
+                <table>
+                    <tr id="base_row" class="header">
+                        <th style="width:250px;">Campanha</th>
+                        <th style="width:250px">Criada por</th>
+                        <th style="width:125px">Doações</th>
+                        <th style="width:125px">Data de vencimento</th>
+                    </tr>
+                </table>
                 <h4>Campanhas do usuário:</h4>
                 <table id="user_campaigns_table">
                 </table>
             </p> 
 
             <p>
+                <table>
+                    <tr id="base_row" class="header">
+                        <th style="width:250px;">Campanha</th>
+                        <th style="width:250px">Criada por</th>
+                        <th style="width:125px">Doações</th>
+                        <th style="width:125px">Data de vencimento</th>
+                    </tr>
+                </table>
                 <h4>Campanhas que o usuário contribuiu:</h4>
                 <table id="campaigns_user_donated_table">
                 </table> 
@@ -191,7 +216,14 @@
         <input type="text" id="search_input" placeholder="Procurar uma campanha...">
         <button id="search_campaigns_button">Procurar</button>
         <br><br>
-        Campanha Doações Término <br>
+        <table>
+            <tr id="base_row" class="header">
+                <th style="width:250px;">Campanha</th>
+                <th style="width:250px">Criada por</th>
+                <th style="width:125px">Doações</th>
+                <th style="width:125px">Data de vencimento</th>
+            </tr>
+        </table>
         <table id="campaigns_table">
         </table> 
     </template>
@@ -203,6 +235,16 @@
         <br>
         <br>
         <input type="text" id="search_input", placeholder="Refinar busca...">
+        <br>
+        <br>
+        <table>
+            <tr id="base_row" class="header">
+                <th style="width:250px;">Campanha</th>
+                <th style="width:250px">Criada por</th>
+                <th style="width:125px">Doações</th>
+                <th style="width:125px">Data de vencimento</th>
+            </tr>
+        </table>
         <table id="campaigns_table"></table>
     </template>
 
@@ -252,6 +294,14 @@
         <button id="back_button">Voltar para a página da campanha</button>
         
         <h3>Histórico de doações</h3>
+
+        <table id="base_donations_table">
+            <tr class="header">
+                <th style="width:250px;">Usuário</th>
+                <th style="width:125px">Doou</th>
+                <th style="width:125px">No dia</th>
+            </tr>
+        </table>
         <table id="donations_table"></table>
     </template>
 
@@ -279,8 +329,11 @@
         </p>
 
         <p>
-            Confirme sua senha (falta fazer)<br>
+            Confirme sua senha
+            <br>
             <input id="password_confirmation" type="password">
+            <br>
+            <span id="wrong_password_message"></span>
         </p>
 
         <button id="confirm_donate_button">Confirmar doação</button>

@@ -10,7 +10,6 @@ init();
 
 function init () {
     $message_div.innerHTML = "";
-    $notification_div.innerHTML = "";
     // Top of the site
     if (is_logged()) load_logged_view();
     else load_not_logged_view(); 
@@ -134,21 +133,25 @@ function valid_date (date) {
 
 function cancel () {
     $message_div.innerHTML = "";
-    window.location.hash === "/home"
+    window.location.hash = "/home"
     init();
-
 }
 
 function load_login_required_view () {
     $message_div.innerText = "Você precisa estar logado para acessar esta página.";
+    $message_div.style.fontSize = "20px";
+    $message_div.style.color = "red";
     $message_div.appendChild(document.createElement("HR"));
 }
 
 function load_token_expired_view () {
     storage.setItem("token", null);
-    $message_div.innerText = "A sua sessão expirou. Inicie uma nova sessão e tente novamene.\n"
-    $body.innerHTML = "";
+    storage.setItem("user_email", null);
+    storage.setItem("user_password", null);
 
+    $message_div.innerText = "A sua sessão expirou. Inicie uma nova sessão e tente novamene.\n";
+    $body.innerHTML = "";
+    
     let $go_to_home_page_button = document.createElement("BUTTON");
     $go_to_home_page_button.innerText = "Voltar para a página principal.";
     $go_to_home_page_button.addEventListener("click", () => {
@@ -172,6 +175,176 @@ function load_page_not_found_view (message) {
     $back_button.addEventListener("click", () => {
         window.location.hash = "/home";
         init();
+    })
+}
+
+function load_campaigns_table ($table, d) {
+    $table.innerHTML = "";
+    if (d.length === 0) {
+        let $row = $table.insertRow(0);
+        let $cell1 = $row.insertCell(0);
+        $cell1.width = "250px";
+        $cell1.style.textAlign = "center";
+        $cell1.innerText = "Nenhuma campanha antende a esses filtros";
+        let $base_row = document.querySelector("#base_row");
+        $base_row.deleteCell(3);
+        $base_row.deleteCell(2);
+        $base_row.deleteCell(1);
+        
+    } else {
+        let i = 0;
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+            let $cell3 = $row.insertCell(2);
+            let $cell4 = $row.insertCell(3);
+            let $cell5 = $row.insertCell(4);
+
+            
+            $cell1.width = "250px";
+            $cell2.width = "250px";
+            $cell3.width = "125px";
+            $cell4.width = "125px";
+            $cell5.width = "125px";
+
+            $cell1.style.textAlign = "center";
+            $cell2.style.textAlign = "center";
+            $cell3.style.textAlign = "center";
+            $cell4.style.textAlign = "center";
+            $cell5.style.textAlign = "center";
+
+            $cell1.innerText = element.name;
+            $cell2.innerText = element.owner;
+            $cell3.innerText = "R$" + element.donations + " / R$" + element.goal;
+            $cell4.innerText = element.deadline;
+
+            let $campaign_button = document.createElement("BUTTON");
+            $campaign_button.innerText = "Ver página da campanha";
+            $campaign_button.addEventListener("click", () => {
+                if (!is_logged()) {
+                    let $cell6 = $row.insertCell(5);
+                    $cell6.width = "125px";
+                    $cell6.style.textAlign = "center";
+                    $cell6.style.color = "red";
+                    $cell6.innerText = "Você precisa estar logado para acessar uma campanha";
+                } else {
+                    window.location.hash = "/campaigns/" + element.url;
+                    init();
+                }
+            });
+            $cell5.appendChild($campaign_button);
+
+            i++;
+        });
+    }
+}
+
+function load_donations_table (d) {
+    let $table = document.querySelector("#donations_table");
+    $table.innerText = "";
+    if (d.length === 0) {
+        let $base_donations_table = document.querySelector("#base_donations_table");
+        $base_donations_table.innerHTML = "";
+        let $row = $table.insertRow(0);
+        let $cell1 = $row.insertCell(0);
+        $cell1.innerText = "Ainda não existem doadores para esta campanha.\n" + 
+                            "Por que você não se torna o primeiro?";
+    } else {
+        let i = 0;
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+            let $cell3 = $row.insertCell(2);
+            let $cell4 = $row.insertCell(3);
+
+            $cell1.innerText = element.owner;
+            $cell2.innerText = "R$" + element.amount;
+            $cell3.innerText = element.date;
+
+            $cell1.width = "250px";
+            $cell2.width = "125px";
+            $cell3.width = "125px";
+            $cell4.width = "125px";
+
+            $cell1.style.textAlign = "center";
+            $cell2.style.textAlign = "center";
+            $cell3.style.textAlign = "center";
+            $cell4.style.textAlign = "center";
+
+            let $user_button = document.createElement("BUTTON");
+            $user_button.innerText = "Ver página do usuário";
+            $user_button.addEventListener("click", () => {
+                window.location.hash = "/users/" + element.owner;
+                init();
+            });
+            $cell4.appendChild($user_button);
+
+            i++;
+        });
+    }
+}
+
+function load_comments_table (d) {
+    let $table = document.querySelector("#comments_table");
+        $table.innerText = "";
+        let i = 0;
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+            let $cell3 = $row.insertCell(2);
+
+            $cell1.innerHTML = "<b>" + element.owner + "</b> diz:  ";
+
+            $cell2.innerText = element.text;
+            let $answer_button = document.createElement("BUTTON");
+            $answer_button.innerText = "Responder";
+            $answer_button.addEventListener("click", () => {
+                load_answer_view(element);
+            });
+            $cell3.appendChild($answer_button);
+
+            let logged_user_email = storage.getItem("user_email");
+            if (logged_user_email === element.owner) {
+                let $cell4 = $row.insertCell(3);
+                let $delete_comment_button = document.createElement("BUTTON");
+                $delete_comment_button.innerText = "Deletar comentário";
+                $delete_comment_button.addEventListener("click", () => {
+                    delete_comment(element);
+                });
+                $cell4.appendChild($delete_comment_button);
+            }
+        })
+}
+
+function load_answers_table (d) {
+    let $table = document.querySelector("#answers_table");
+    $table.innerText = "";
+    let i = 0;
+    d.forEach(element => {
+        let $row = $table.insertRow(i);
+
+        let $cell1 = $row.insertCell(0);
+        let $cell2 = $row.insertCell(1);
+
+        $cell1.innerHTML = "<b>" + element.owner + "</b> diz:  ";
+        $cell2.innerText = element.text;
+
+        let logged_user_email = storage.getItem("user_email");
+        if (logged_user_email === element.owner) {
+            let $cell3 = $row.insertCell(2);
+            let $delete_answer_button = document.createElement("BUTTON");
+            $delete_answer_button.innerText = "Deletar resposta";
+            $delete_answer_button.addEventListener("click", () => {
+                delete_answer(comment, element);
+            });
+            $cell3.appendChild($delete_answer_button);
+        }
     })
 }
 
@@ -200,6 +373,7 @@ function load_logged_view () {
     $logout_button.addEventListener("click", () => {
         storage.setItem("user_email", null);
         storage.setItem("token", null);
+        storage.setItem("user_password", null);
         cancel();
     });
 
@@ -216,6 +390,8 @@ function load_logged_view () {
 
         if (r.status === 403 || r.status === 500) {
             storage.setItem("token", null);
+            storage.setItem("user_email", null);
+            storage.setItem("user_password", null);
             init();
         } else 
             return r.json()
@@ -339,33 +515,7 @@ function fetch_top_5_campaigns (sort, status) {
     })
     .then (r => r.json())
     .then (d => {
-        if (d.length === 0) {
-            // TODO
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
-
-                $cell1.innerText = element.name;
-                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
-                $cell3.innerText = element.deadline;
-
-                let $campaign_button = document.createElement("BUTTON");
-                $campaign_button.innerText = "Ver página da campanha";
-                $campaign_button.addEventListener("click", () => {
-                    window.location.hash = "/campaigns/" + element.url;
-                    init();
-                });
-                $cell4.appendChild($campaign_button);
-
-                i++;
-            });
-        }
+        load_campaigns_table ($table, d);
     });
 }
 
@@ -435,11 +585,15 @@ function sign_in () {
         if (d != undefined) {
             storage.setItem("token", d.token);
             storage.setItem("user_email", email);
-            $message_div.innerText = "Login realizado";
-            $message_div.append(document.createElement("hr"));
+            storage.setItem("user_password", password);
+            let $p = document.createElement("P");
+            $p.innerText = "Login realizado com sucesso!";
+            $p.style.color = "green";
+            $notification_div.appendChild($p);
+            $notification_div.append(document.createElement("hr"));
             setTimeout(_ => {
-                $message_div.innerHTML = "";
-            }, 2000);
+                $notification_div.innerHTML = "";
+            }, 3500);
             window.location.hash = "/home";
             init();
         }
@@ -536,34 +690,7 @@ function fetch_campaigns_user_donated (email, substring) {
     })
     .then (r => r.json())
     .then (d => {
-        $table.innerHTML = "";
-        if (d.length === 0) {
-            // TODO
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
-
-                $cell1.innerText = element.name;
-                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
-                $cell3.innerText = element.deadline;
-
-                let $campaign_button = document.createElement("BUTTON");
-                $campaign_button.innerText = "Ver página da campanha";
-                $campaign_button.addEventListener("click", () => {
-                    window.location.hash = "/campaigns/" + element.url;
-                    init();
-                });
-                $cell4.appendChild($campaign_button);
-
-                i++;
-            });
-        }
+        load_campaigns_table ($table, d);
     });
 }
 
@@ -582,34 +709,7 @@ function fetch_user_campaigns(email, substring) {
     })
     .then (r => r.json())
     .then (d => {
-        $table.innerHTML = "";
-        if (d.length === 0) {
-            // TODO
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
-
-                $cell1.innerText = element.name;
-                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
-                $cell3.innerText = element.deadline;
-
-                let $campaign_button = document.createElement("BUTTON");
-                $campaign_button.innerText = "Ver página da campanha";
-                $campaign_button.addEventListener("click", () => {
-                    window.location.hash = "/campaigns/" + element.url;
-                    init();
-                });
-                $cell4.appendChild($campaign_button);
-
-                i++;
-            });
-        }
+        load_campaigns_table ($table, d);
     });
 }
 
@@ -797,34 +897,8 @@ function fetch_campaigns(sort, status, substring) {
             return r.json();
     })
     .then (d => {
-        $table.innerText = "";
-        if (d !== undefined && d.length === 0) {
-            // TODO: mensagem de nenhuma campanha cadastrada
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
-
-                $cell1.innerText = element.name;
-                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
-                $cell3.innerText = element.deadline;
-
-                let $campaign_button = document.createElement("BUTTON");
-                $campaign_button.innerText = "Ver página da campanha";
-                $campaign_button.addEventListener("click", () => {
-                    window.location.hash = "/campaigns/" + element.url;
-                    init();
-                });
-                $cell4.appendChild($campaign_button);
-
-                i++;
-            });
-        }
+        if (d !== undefined)
+            load_campaigns_table ($table, d);
     });
 }
 
@@ -835,103 +909,106 @@ function fetch_campaigns(sort, status, substring) {
 // -=-=-=-=-=- Campaigns main page -=-=-=-=-=-
 
 function load_campaign_view (campaign_url) {
-    fetch (API + "/campaigns/" + campaign_url, {
-        "method":"GET",
-        "headers":{"Content-Type":"application/json",
-                "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => {
-        if (!r.ok) {
-            if (r.status === 404) {
-                $message_div.innerText = "Campanha não encontrada.";
-                $message_div.append(document.createElement("hr"));
+    if (!is_logged()) {
+        load_login_required_view();
+    } else {
+        fetch (API + "/campaigns/" + campaign_url, {
+            "method":"GET",
+            "headers":{"Content-Type":"application/json",
+                    "Authorization":"Bearer " + storage.getItem("token")}
+        })
+        .then (r => {
+            if (!r.ok) {
+                if (r.status === 404) {
+                    load_page_not_found_view("Campanha não encontrada.");
+                    $message_div.append(document.createElement("hr"));
+                }
+                else if (r.status === 401) {
+                    load_token_expired_view ();
+                }
+            } else {
+                return r.json();
             }
-            else if (r.status === 401)
-                load_token_expired_view ();
-        } else {
-            return r.json();
-        }
-    })
-    .then(d => {
-        $message_div.innerHTML = "";
-        if (d != undefined) {
-            // Load campaign info:
-            let $template = document.querySelector("#campaign_view");
-            $body.innerHTML = $template.innerHTML;
+        })
+        .then(d => {
+            if (d != undefined) {
+                $message_div.innerHTML = "";
+                // Load campaign info:
+                let $template = document.querySelector("#campaign_view");
+                $body.innerHTML = $template.innerHTML;
 
-            let $campaign = document.querySelector("#campaign_div");
+                let $campaign = document.querySelector("#campaign_div");
 
-            let $name = document.querySelector("#name");
-            $name.innerText = d.name;
+                let $name = document.querySelector("#name");
+                $name.innerText = d.name;
 
-            let $owner = document.querySelector("#owner");
-            $owner.innerText = "Criada por: " + d.owner;
-            
-            let $description = document.querySelector("#description");
-            $description.innerText = d.description;
+                let $owner = document.querySelector("#owner");
+                $owner.innerText = "Criada por: " + d.owner;
+                
+                let $description = document.querySelector("#description");
+                $description.innerText = d.description;
 
-            let $status = document.querySelector("#status");
-            $status.innerText = "Status: " + d.status;
+                let $status = document.querySelector("#status");
+                $status.innerText = "Status: " + d.status;
 
-            let $progress = document.querySelector("#progress");
-            $progress.innerText = "Progresso da campanha:\nR$" + 
-                                    Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
-            let $donate_button = document.querySelector("#donate_button");
-            $donate_button.addEventListener("click", () => {
-                $notification_div.innerHTML = "";
-                window.location.hash = "/campaigns/" + d.url + "/donate";
-                load_donate_view (d);
-            });
-            let $see_donations_button = document.querySelector("#see_donations_button");
-            $see_donations_button.addEventListener("click", () => {
-                $notification_div.innerHTML = "";
-                window.location.hash = "/campaigns/" + d.url + "/donations";
-                load_donations_history_view(d);
-            });
+                let $progress = document.querySelector("#progress");
+                $progress.innerText = "Progresso da campanha:\nR$" + 
+                                        Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
+                let $donate_button = document.querySelector("#donate_button");
+                $donate_button.addEventListener("click", () => {
+                    $notification_div.innerHTML = "";
+                    window.location.hash = "/campaigns/" + d.url + "/donate";
+                    load_donate_view (d);
+                });
+                let $see_donations_button = document.querySelector("#see_donations_button");
+                $see_donations_button.addEventListener("click", () => {
+                    $notification_div.innerHTML = "";
+                    window.location.hash = "/campaigns/" + d.url + "/donations";
+                    load_donations_history_view(d);
+                });
 
-            let $deadline = document.querySelector("#deadline");
-            $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
+                let $deadline = document.querySelector("#deadline");
+                $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
 
-            let $likes = document.querySelector("#likes");
-            $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
-            
-            // Load like options
-            let $like_button = document.querySelector("#like_button");
-            if (d.likes.includes(storage.getItem("user_email")))
-                $like_button.innerText = "Retirar curtida";
-            else
-                $like_button.innerText = "Curtir";
-            $like_button.addEventListener("click", () => {
-                $notification_div.innerHTML = "";
-                to_like(d, $likes, $like_button);
-            })
+                let $likes = document.querySelector("#likes");
+                $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
+                
+                // Load like options
+                let $like_button = document.querySelector("#like_button");
+                if (d.likes.includes(storage.getItem("user_email")))
+                    $like_button.innerText = "Retirar curtida";
+                else
+                    $like_button.innerText = "Curtir";
+                $like_button.addEventListener("click", () => {
+                    $notification_div.innerHTML = "";
+                    to_like(d, $likes, $like_button);
+                })
 
-            let $back_button = document.querySelector("#back_button");
-            $back_button.addEventListener("click", () => {
-                $notification_div.innerHTML = "";
-                window.location.hash = "/home";
-                init();
-            });
-            $campaign.appendChild($back_button);
+                let $back_button = document.querySelector("#back_button");
+                $back_button.addEventListener("click", () => {
+                    $notification_div.innerHTML = "";
+                    window.location.hash = "/home";
+                    init();
+                });
+                $campaign.appendChild($back_button);
 
-            // Load comments info and options:
-            fetch_campaign_comments(d.url);
+                // Load comments info and options:
+                fetch_campaign_comments(d.url);
 
-            let $comment_button = document.querySelector("#comment_button");
-            $comment_button.addEventListener("click", () => {
-                $notification_div.innerHTML = "";
-                let $comment_input = document.querySelector("#comment_input");
-                let text = $comment_input.value;
-                $comment_input.value = "";
-                to_comment(d.url, text);
-            });
-        }
-    });
+                let $comment_button = document.querySelector("#comment_button");
+                $comment_button.addEventListener("click", () => {
+                    $notification_div.innerHTML = "";
+                    let $comment_input = document.querySelector("#comment_input");
+                    let text = $comment_input.value;
+                    $comment_input.value = "";
+                    to_comment(d.url, text);
+                });
+            }
+        });
+    }
 }
 
 function fetch_campaign_comments (url) {
-    let $table = document.querySelector("#comments_table");
-    $table.innerText = "";
     fetch (API + "/campaigns/" + url + "/comments", {
         method:"GET",
         headers: {"Content-Type":"application/json",
@@ -940,37 +1017,7 @@ function fetch_campaign_comments (url) {
     .then(r => r.json()
     )
     .then(d => {
-        let i = 0;
-        d.forEach(element => {
-            let $row = $table.insertRow(i);
-
-            let $cell1 = $row.insertCell(0);
-            let $cell2 = $row.insertCell(1);
-            let $cell3 = $row.insertCell(2);
-
-            $cell1.innerText = element.owner + " diz: ";
-            $cell2.innerText = element.text;
-            let $answer_button = document.createElement("BUTTON");
-            $answer_button.innerText = "Responder";
-            $answer_button.addEventListener("click", () => {
-                load_answer_view(element);
-            });
-
-            $cell3.appendChild(document.createElement("BR"));
-            $cell3.appendChild($answer_button);
-
-            let logged_user_email = storage.getItem("user_email");
-            if (logged_user_email === element.owner) {
-                let $cell4 = $row.insertCell(3);
-                let $delete_comment_button = document.createElement("BUTTON");
-                $delete_comment_button.innerText = "Deletar comentário";
-                $delete_comment_button.addEventListener("click", () => {
-                    delete_comment(element);
-                });
-                $cell4.appendChild(document.createElement("BR"));
-                $cell4.appendChild($delete_comment_button);
-            }
-        })
+        load_comments_table(d);
     });
 }
 
@@ -1012,28 +1059,40 @@ function load_donate_view (campaign) {
 }
 
 function donate (url) {
-    let $donation_value = document.querySelector("#donation_value");
-    let amount = $donation_value.value.replace(',','.').replace(' ','');
-    fetch (API + "/campaigns/" + url + "/donations", {
-        method:"POST",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")},
-        body:`{"amount":"${amount}"}`
-    })
-    .then (r => {
-        //TODO: tratar possíveis erros de not found ou unauthorized
-        if (r.status === 401)
+    let password_confirmation = document.querySelector("#password_confirmation").value;
+    if (password_confirmation !== storage.getItem("user_password")) {
+        let $wrong_password_message = document.querySelector("#wrong_password_message");
+        $wrong_password_message.innerText = "Senha incorreta. Tente novamente.";
+    } else {
+        let $donation_value = document.querySelector("#donation_value");
+        let amount = $donation_value.value.replace(',','.').replace(' ','');
+        fetch (API + "/campaigns/" + url + "/donations", {
+            method:"POST",
+            headers: {"Content-Type":"application/json",
+                    "Authorization":"Bearer " + storage.getItem("token")},
+            body:`{"amount":"${amount}"}`
+        })
+        .then (r => {
+            if (r.status === 401)
                 load_token_expired_view ();
-        else
-            return r.json();
-    })
-    .then (d => {
-        if (d !== undefined) {
-            //todo: mensagem de sucesso na doação
-            window.location.hash = "/campaigns/" + d.campaign;
-            init();
-        }
-    });
+            else
+                return r.json();
+        })
+        .then (d => {
+            if (d !== undefined) {
+                let $p = document.createElement("P");
+                $p.innerText = "Doação realizada com sucesso!";
+                $p.style.color = "green";
+                $notification_div.appendChild($p);
+                $notification_div.appendChild(document.createElement("HR"));
+                setTimeout(_ => {
+                    $notification_div.innerHTML = "";
+                }, 3500);
+                window.location.hash = "/campaigns/" + d.campaign;
+                init();
+            }
+        });
+    }
 }
 
 function to_like (campaign, $likes, $like_button) {
@@ -1069,15 +1128,12 @@ function to_comment (url, text) {
         body:`{"text":"${text}"}`
     })
     .then (r => {
-        //todo: tratar possíveis erros como 404 para uma camapnha que não existe
         if (r.status === 401)
                 load_token_expired_view ();
         else
             return r.json();
     })
     .then (d => {
-        // todo: mostrar ou retirar mensagens
-        // Depois de adicionar o comentário, faz o refresh dos comentários
         if (d !== undefined)
             fetch_campaign_comments(url);
     });
@@ -1148,8 +1204,6 @@ function to_answer (comment, text) {
 }
 
 function fetch_comment_answers (comment) {
-    let $table = document.querySelector("#answers_table");
-    $table.innerText = "";
     fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
         method:"GET",
         headers: {"Content-Type":"application/json",
@@ -1162,30 +1216,8 @@ function fetch_comment_answers (comment) {
             return r.json()
     })
     .then(d => {
-        if (d !== undefined) {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-
-                $cell1.innerText = element.owner + " diz: ";
-                $cell2.innerText = element.text;
-
-                let logged_user_email = storage.getItem("user_email");
-                if (logged_user_email === element.owner) {
-                    let $cell3 = $row.insertCell(2);
-                    let $delete_answer_button = document.createElement("BUTTON");
-                    $delete_answer_button.innerText = "Deletar resposta";
-                    $delete_answer_button.addEventListener("click", () => {
-                        delete_answer(comment, element);
-                    });
-                    $cell3.appendChild(document.createElement("BR"));
-                    $cell3.appendChild($delete_answer_button);
-                }
-            })
-        }
+        if (d !== undefined)
+            load_answers_table(d);
     });
 }
 
@@ -1212,7 +1244,8 @@ function delete_answer (comment, answer) {
 function load_donations_history_view_indirectly (url) {
     fetch (API + "/campaigns/" + url, {
         "method":"GET",
-        "headers":{"Content-Type":"application/json"}
+        "headers":{"Content-Type":"application/json",
+        "Authorization": "Bearer " + storage.getItem("token")}
     })
     .then (r => {
         return r.json();
@@ -1238,11 +1271,10 @@ function load_donations_history_view (campaign) {
 }
 
 function load_donations_history (campaign) {
-    let $table = document.querySelector("#donations_table");
-    $table.innerText = "";
     fetch (API + "/campaigns/" + campaign.url + "/donations", {
         "method":"GET",
-        "headers":{"Content-Type":"application/json"}
+        "headers":{"Content-Type":"application/json",
+        "Authorization": "Bearer " + storage.getItem("token")}
     })
     .then (r => {
         if (r.status === 401)
@@ -1252,33 +1284,7 @@ function load_donations_history (campaign) {
     })
     .then (d => {
         if (d !== undefined) {
-            if (d.length === 0) {
-                // TODO
-            } else {
-                let i = 0;
-                d.forEach(element => {
-                    let $row = $table.insertRow(i);
-
-                    let $cell1 = $row.insertCell(0);
-                    let $cell2 = $row.insertCell(1);
-                    let $cell3 = $row.insertCell(2);
-                    let $cell4 = $row.insertCell(3);
-
-                    $cell1.innerText = element.owner;
-                    $cell2.innerText = "R$" + element.amount;
-                    $cell3.innerText = element.date;
-
-                    let $user_button = document.createElement("BUTTON");
-                    $user_button.innerText = "Ver página do usuário";
-                    $user_button.addEventListener("click", () => {
-                        window.location.hash = "/users/" + element.owner;
-                        init();
-                    });
-                    $cell4.appendChild($user_button);
-
-                    i++;
-                });
-            }
+            load_donations_table (d);
         }
     });
 }
