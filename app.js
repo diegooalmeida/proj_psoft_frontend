@@ -1,23 +1,16 @@
-//TODO: reler e refarotrar o código para as rotas erradas ou com possível erro
-//      e tratar isso.
-
-// TODO: exigir login para primeira filtragem.
-// TODO: resolver bug que a listagem do status "TODAS" está deixando uma campanha de fora.
-
-
-// TODO: exigir login ao clicar no botão de ver campanha no top 5 do home
-
 const API = "https://psoft-ajude-o-grupo-13.herokuapp.com";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
 let $message_div = document.querySelector("#message_div");
+let $notification_div = document.querySelector("#notification_div");
 let storage = window.localStorage;
 let globalTimeout = null;
 
 init();
 
 function init () {
-
+    $message_div.innerHTML = "";
+    $notification_div.innerHTML = "";
     // Top of the site
     if (is_logged()) load_logged_view();
     else load_not_logged_view(); 
@@ -33,24 +26,29 @@ function init () {
     else if (window.location.hash === "#/sign-in")
         load_sign_in_view();
     // Body
-    else if (window.location.hash.split("/")[1] === "users")
-        load_profile_page(window.location.hash.split("/")[2]);
-    else if (window.location.hash.split("/")[1] === "campaigns") {
-        if (window.location.hash.split("/")[2] === "create")
-            load_create_campaign_view();
-        else if (window.location.hash.split("/")[2] === "all")
-            load_all_campaigns_view();
-        else if (window.location.hash.split("/")[2] === "filtered-by")
-            load_filtered_campaigns_view(window.location.hash.split("/")[3],
-            window.location.hash.split("/")[4],
-            window.location.hash.split("/")[5]);
-        else
-            if ((window.location.hash.split("/")[3]) === undefined)
-                load_campaign_view(window.location.hash.split("/")[2]);
-            else if ((window.location.hash.split("/")[3]) === "donate")
-                load_donate_view_indirectly(window.location.hash.split("/")[2]);
-            else if ((window.location.hash.split("/")[3]) === "donations")
-                load_donations_history_view_indirectly(window.location.hash.split("/")[2]);
+    else {
+        if (!storage.getItem("token")) {
+            load_login_required_view ();
+        }
+        else if (window.location.hash.split("/")[1] === "users")
+            load_profile_page(window.location.hash.split("/")[2]);
+        else if (window.location.hash.split("/")[1] === "campaigns") {
+            if (window.location.hash.split("/")[2] === "create")
+                load_create_campaign_view();
+            else if (window.location.hash.split("/")[2] === "all")
+                load_all_campaigns_view();
+            else if (window.location.hash.split("/")[2] === "filtered-by")
+                load_filtered_campaigns_view(window.location.hash.split("/")[3],
+                window.location.hash.split("/")[4],
+                window.location.hash.split("/")[5]);
+            else
+                if ((window.location.hash.split("/")[3]) === undefined)
+                    load_campaign_view(window.location.hash.split("/")[2]);
+                else if ((window.location.hash.split("/")[3]) === "donate")
+                    load_donate_view_indirectly(window.location.hash.split("/")[2]);
+                else if ((window.location.hash.split("/")[3]) === "donations")
+                    load_donations_history_view_indirectly(window.location.hash.split("/")[2]);
+        }
     }
 }
 
@@ -141,6 +139,42 @@ function cancel () {
 
 }
 
+function load_login_required_view () {
+    $message_div.innerText = "Você precisa estar logado para acessar esta página.";
+    $message_div.appendChild(document.createElement("HR"));
+}
+
+function load_token_expired_view () {
+    storage.setItem("token", null);
+    $message_div.innerText = "A sua sessão expirou. Inicie uma nova sessão e tente novamene.\n"
+    $body.innerHTML = "";
+
+    let $go_to_home_page_button = document.createElement("BUTTON");
+    $go_to_home_page_button.innerText = "Voltar para a página principal.";
+    $go_to_home_page_button.addEventListener("click", () => {
+        window.location.hash = "/home";
+        init();
+    })
+    $message_div.appendChild($go_to_home_page_button);
+    $message_div.appendChild(document.createElement("HR"));
+
+    load_not_logged_view();
+}
+
+function load_page_not_found_view (message) {
+    let $template = document.querySelector("#page_not_found_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $p = document.querySelector("#not_found_message");
+    $p.innerText = message;
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        window.location.hash = "/home";
+        init();
+    })
+}
+
 // ********** End of auxiliary functions **********
 
 // ********** Functions to load logged or not logged info **********
@@ -174,7 +208,7 @@ function load_logged_view () {
 
     let headers = new Headers();
     headers.append("Authorization", "Bearer " + storage.getItem("token"));
-    fetch(API + "/users/auth", {
+    fetch(API + "/users/auth/get-user", {
         method:"GET",
         headers: headers
     })
@@ -201,14 +235,21 @@ function fetch_user_info (email) {
         headers: {"Content-Type":"application/json"}
     })
     .then (r => {
-        return r.json();
+        if (!r.ok) {
+            if (r.status === 404) {
+                load_page_not_found_view("Usuário não encontrado.");
+            }
+        } else 
+            return r.json();
     })
     .then (d => {
-        let $user_name = document.querySelector("#user_name");
-        $user_name.innerText = d.fname + " " + d.lname;
+        if (d !== undefined) {
+            let $user_name = document.querySelector("#user_name");
+            $user_name.innerText = d.fname + " " + d.lname;
 
-        let $user_email = document.querySelector("#user_email");
-        $user_email.innerText = d.email;
+            let $user_email = document.querySelector("#user_email");
+            $user_email.innerText = d.email;
+        }
     });
 }
 
@@ -336,6 +377,7 @@ function load_sign_in_view () {
     let $template = document.querySelector("#sign_in_view");
     $top.innerHTML = $template.innerHTML;
     $body.innerHTML = "";
+    $message_div.innerHTML = "";
 
     let $sign_in = document.querySelector("#sign_in");
     $sign_in.addEventListener("click", sign_in);
@@ -350,6 +392,7 @@ function load_sign_up_view () {
     let $template = document.querySelector("#sign_up_view");
     $top.innerHTML = $template.innerHTML;
     $body.innerHTML = "";
+    $message_div.innerHTML = "";
 
     let $sign_up = document.querySelector("#sign_up");
     $sign_up.addEventListener("click", sign_up);
@@ -370,8 +413,6 @@ function sign_in () {
     let $email_not_found_message = document.querySelector("#email_not_found_message");
     let $wrong_password_message = document.querySelector("#wrong_password_message");
 
-    let $aux_div = document.querySelector("#aux_div");
-
     fetch (API + "/auth/login", {
         method:"POST",
         headers: {"Content-Type":"application/json"},
@@ -382,7 +423,6 @@ function sign_in () {
         else {
             if (r.status === 404) {
                 $wrong_password_message.innerText = "";
-                $aux_div.innerHTML = "";
                 $email_not_found_message.innerText = "Usuário não encontrado.";
             }
             else {
@@ -465,7 +505,6 @@ function load_profile_page (email) {
         init();
     })
 
-    //TODO: NÃO PRECISA DE FETCH, TA SALVO NO BROWSER
     fetch_user_info(email);
 
     let $search_input = document.querySelector("#search_input");
@@ -614,8 +653,9 @@ function create_campaign () {
             body: JSON.stringify(campaign)
         })
         .then(r => {
-            // TODO: tratar token expirado
-            if (r.status === 403)
+            if (r.status === 401)
+                load_token_expired_view ();
+            else if (r.status === 403)
                 $message_span.innerText = "Já existe uma campanha com esse nome, tente outro"
             else {
                 $message_span.innerText = "";
@@ -624,6 +664,13 @@ function create_campaign () {
         })
         .then(d => {
             if (d !== undefined) {
+                $notification_div.innerText = "Campanha criada com sucesso!\n" +
+                            "Você já pode compartilhá-la com o link:\n";
+                let $a = document.createElement("A");
+                $a.href = "http://psoft-ajude-o-grupo-13.surge.sh/#/campaigns/" + d.url;
+                $a.innerText = "http://psoft-ajude-o-grupo-13.surge.sh/#/campaigns/" + d.url;
+                $notification_div.appendChild($a);
+                $notification_div.appendChild(document.createElement("HR"));
                 window.location.hash = "/campaigns/" + d.url;
                 init();
             }
@@ -744,12 +791,14 @@ function fetch_campaigns(sort, status, substring) {
                    "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
-        // TODO: tratar token expirado.
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
         $table.innerText = "";
-        if (d.length === 0) {
+        if (d !== undefined && d.length === 0) {
             // TODO: mensagem de nenhuma campanha cadastrada
         } else {
             let i = 0;
@@ -786,19 +835,19 @@ function fetch_campaigns(sort, status, substring) {
 // -=-=-=-=-=- Campaigns main page -=-=-=-=-=-
 
 function load_campaign_view (campaign_url) {
-
     fetch (API + "/campaigns/" + campaign_url, {
         "method":"GET",
         "headers":{"Content-Type":"application/json",
-                   "Authorization":"Bearer " + storage.getItem("token")}
+                "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
-        // todo: tratar token expirado
         if (!r.ok) {
             if (r.status === 404) {
                 $message_div.innerText = "Campanha não encontrada.";
                 $message_div.append(document.createElement("hr"));
             }
+            else if (r.status === 401)
+                load_token_expired_view ();
         } else {
             return r.json();
         }
@@ -829,11 +878,13 @@ function load_campaign_view (campaign_url) {
                                     Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
             let $donate_button = document.querySelector("#donate_button");
             $donate_button.addEventListener("click", () => {
+                $notification_div.innerHTML = "";
                 window.location.hash = "/campaigns/" + d.url + "/donate";
                 load_donate_view (d);
             });
             let $see_donations_button = document.querySelector("#see_donations_button");
             $see_donations_button.addEventListener("click", () => {
+                $notification_div.innerHTML = "";
                 window.location.hash = "/campaigns/" + d.url + "/donations";
                 load_donations_history_view(d);
             });
@@ -851,11 +902,13 @@ function load_campaign_view (campaign_url) {
             else
                 $like_button.innerText = "Curtir";
             $like_button.addEventListener("click", () => {
+                $notification_div.innerHTML = "";
                 to_like(d, $likes, $like_button);
             })
 
             let $back_button = document.querySelector("#back_button");
             $back_button.addEventListener("click", () => {
+                $notification_div.innerHTML = "";
                 window.location.hash = "/home";
                 init();
             });
@@ -866,6 +919,7 @@ function load_campaign_view (campaign_url) {
 
             let $comment_button = document.querySelector("#comment_button");
             $comment_button.addEventListener("click", () => {
+                $notification_div.innerHTML = "";
                 let $comment_input = document.querySelector("#comment_input");
                 let text = $comment_input.value;
                 $comment_input.value = "";
@@ -967,14 +1021,18 @@ function donate (url) {
         body:`{"amount":"${amount}"}`
     })
     .then (r => {
-        // todo: tratar token expirado
         //TODO: tratar possíveis erros de not found ou unauthorized
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
-        //todo: mensagem de sucesso na doação
-        window.location.hash = "/campaigns/" + d.campaign;
-        init();
+        if (d !== undefined) {
+            //todo: mensagem de sucesso na doação
+            window.location.hash = "/campaigns/" + d.campaign;
+            init();
+        }
     });
 }
 
@@ -985,15 +1043,19 @@ function to_like (campaign, $likes, $like_button) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
-        // todo: tratar token expirado
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
-        $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
-        if (d.likes.includes(storage.getItem("user_email")))
-            $like_button.innerText = "Retirar curtida";
-        else
-            $like_button.innerText = "Curtir";
+        if (d !== undefined) {
+            $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
+            if (d.likes.includes(storage.getItem("user_email")))
+                $like_button.innerText = "Retirar curtida";
+            else
+                $like_button.innerText = "Curtir";
+        }
     });
 }
 
@@ -1007,14 +1069,17 @@ function to_comment (url, text) {
         body:`{"text":"${text}"}`
     })
     .then (r => {
-        //todo: tratar token expirado
         //todo: tratar possíveis erros como 404 para uma camapnha que não existe
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
         // todo: mostrar ou retirar mensagens
         // Depois de adicionar o comentário, faz o refresh dos comentários
-        fetch_campaign_comments(url);
+        if (d !== undefined)
+            fetch_campaign_comments(url);
     });
 }
 
@@ -1025,11 +1090,14 @@ function delete_comment (comment) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
-        //todo: tratar token expirado
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
-        fetch_campaign_comments(comment.campaign);
+        if (d !== undefined)
+            fetch_campaign_comments(comment.campaign);
     });
 }
 
@@ -1068,11 +1136,14 @@ function to_answer (comment, text) {
         body:`{"text":"${text}"}`
     })
     .then (r => {
-        //todo: tratar token expirado
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
-        fetch_comment_answers(comment);
+        if (d !== undefined)
+            fetch_comment_answers(comment);
     })
 }
 
@@ -1085,32 +1156,36 @@ function fetch_comment_answers (comment) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then(r => {
-        //todo: tratar token expirado
-        return r.json()
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json()
     })
     .then(d => {
-        let i = 0;
-        d.forEach(element => {
-            let $row = $table.insertRow(i);
+        if (d !== undefined) {
+            let i = 0;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
 
-            let $cell1 = $row.insertCell(0);
-            let $cell2 = $row.insertCell(1);
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
 
-            $cell1.innerText = element.owner + " diz: ";
-            $cell2.innerText = element.text;
+                $cell1.innerText = element.owner + " diz: ";
+                $cell2.innerText = element.text;
 
-            let logged_user_email = storage.getItem("user_email");
-            if (logged_user_email === element.owner) {
-                let $cell3 = $row.insertCell(2);
-                let $delete_answer_button = document.createElement("BUTTON");
-                $delete_answer_button.innerText = "Deletar resposta";
-                $delete_answer_button.addEventListener("click", () => {
-                    delete_answer(comment, element);
-                });
-                $cell3.appendChild(document.createElement("BR"));
-                $cell3.appendChild($delete_answer_button);
-            }
-        })
+                let logged_user_email = storage.getItem("user_email");
+                if (logged_user_email === element.owner) {
+                    let $cell3 = $row.insertCell(2);
+                    let $delete_answer_button = document.createElement("BUTTON");
+                    $delete_answer_button.innerText = "Deletar resposta";
+                    $delete_answer_button.addEventListener("click", () => {
+                        delete_answer(comment, element);
+                    });
+                    $cell3.appendChild(document.createElement("BR"));
+                    $cell3.appendChild($delete_answer_button);
+                }
+            })
+        }
     });
 }
 
@@ -1121,11 +1196,14 @@ function delete_answer (comment, answer) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
-        // todo: tratar token expirado
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
-        fetch_comment_answers(comment);
+        if (d !== undefined)
+            fetch_comment_answers(comment);
     });
 }
 
@@ -1167,36 +1245,40 @@ function load_donations_history (campaign) {
         "headers":{"Content-Type":"application/json"}
     })
     .then (r => {
-        // todo: trater token expirado
-        return r.json();
+        if (r.status === 401)
+                load_token_expired_view ();
+        else
+            return r.json();
     })
     .then (d => {
-        if (d.length === 0) {
-            // TODO
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
+        if (d !== undefined) {
+            if (d.length === 0) {
+                // TODO
+            } else {
+                let i = 0;
+                d.forEach(element => {
+                    let $row = $table.insertRow(i);
 
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
+                    let $cell1 = $row.insertCell(0);
+                    let $cell2 = $row.insertCell(1);
+                    let $cell3 = $row.insertCell(2);
+                    let $cell4 = $row.insertCell(3);
 
-                $cell1.innerText = element.owner;
-                $cell2.innerText = "R$" + element.amount;
-                $cell3.innerText = element.date;
+                    $cell1.innerText = element.owner;
+                    $cell2.innerText = "R$" + element.amount;
+                    $cell3.innerText = element.date;
 
-                let $user_button = document.createElement("BUTTON");
-                $user_button.innerText = "Ver página do usuário";
-                $user_button.addEventListener("click", () => {
-                    window.location.hash = "/users/" + element.owner;
-                    init();
+                    let $user_button = document.createElement("BUTTON");
+                    $user_button.innerText = "Ver página do usuário";
+                    $user_button.addEventListener("click", () => {
+                        window.location.hash = "/users/" + element.owner;
+                        init();
+                    });
+                    $cell4.appendChild($user_button);
+
+                    i++;
                 });
-                $cell4.appendChild($user_button);
-
-                i++;
-            });
+            }
         }
     });
 }
