@@ -641,11 +641,14 @@ function sign_up () {
         })
         .then(d => {
             if (d != undefined) {
-                $message_div.innerText = "Usuário cadastrado com sucesso!";
-                $message_div.append(document.createElement("hr"));
-            setTimeout(_ => {
-                $message_div.innerHTML = "";
-            }, 2000);
+                let $p = document.createElement("P");
+                $p.innerText = "Conta criada com sucesso!";
+                $p.style.color = "green";
+                $notification_div.appendChild($p);
+                $notification_div.append(document.createElement("hr"));
+                setTimeout(_ => {
+                    $notification_div.innerHTML = "";
+                }, 3500);
             window.location.hash = "/home";
             init();
         }
