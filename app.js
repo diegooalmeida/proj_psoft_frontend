@@ -14,29 +14,6 @@ let globalTimeout = null;
 
 init();
 
-function create_user_object (email, fname, lname, password, credit_card) {
-    let user = {};
-    user.email = email;
-    user.fname = fname;
-    user.lname = lname;
-    user.password = password;
-    user.credit_card = credit_card;
-    return user;
-}
-
-function create_campaign_object (name, description, deadline, goal) {
-    let campaign = {};
-    campaign.name = name;
-    campaign.url = ((name) => {
-        let url = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g," ").replace(/\s{2,}/g," ").trim().replace(/ /g,"-");
-        return url;
-    }) (name);
-    campaign.description = description;
-    campaign.deadline = deadline;
-    campaign.goal = goal;
-    return campaign;
-}
-
 function init () {
 
     // Top of the site
@@ -75,147 +52,154 @@ function init () {
     }
 }
 
-function load_all_campaigns_view () {
-    let $template = document.querySelector("#all_campaigns_view");
-    $body.innerHTML = $template.innerHTML;
-
-    let $back_button = document.querySelector("#back_button");
-    $back_button.addEventListener("click", () => {
-        window.location.hash = "/home";
-        init();
-    });
-
-    let $search_input = document.querySelector("#search_input");
-    let $campaigns_filter = document.querySelector("#campaigns_filter");
-    let $sort_parameter = document.querySelector("#sort_parameter");
-    let $search_campaigns_button = document.querySelector("#search_campaigns_button");
-
-    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
-   
-    $search_campaigns_button.addEventListener("click", () => {
-        window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
-        load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
-    });
-
-    $campaigns_filter.onchange = function() {
-        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
-    };
-    $sort_parameter.onchange = function() {
-        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
-    };
+// ********** Auxiliary functions **********
+function create_user_object (email, fname, lname, password, credit_card) {
+    let user = {};
+    user.email = email;
+    user.fname = fname;
+    user.lname = lname;
+    user.password = password;
+    user.credit_card = credit_card;
+    return user;
 }
 
-function load_filtered_campaigns_view (sort, status, substring) {
-    let $template = document.querySelector("#filtered_campaigns_view");
-    $body.innerHTML = $template.innerHTML;
-
-    let status_filter;
-    if (status === "active")
-        status_filter = "Listando campanhas ativas";
-    else if (status === "concluded")
-        status_filter = "Listando campanhas concluídas";
-    else if (status === "expired")
-        status_filter = "Listando campanhas vencidas";
-    else
-        status_filter = "Listando todas as campanhas"
-
-    let sort_filter;
-    if (sort === "likes")
-        sort_filter = "curtidas";
-    else if (sort === "deadline")
-        sort_filter = "data de vencimento";
-    else
-        sort_filter = "doações";
-
-    let message;
-    if (substring === "")
-        message = status_filter + ", ordenadas por " + sort_filter;
-    else
-        message = status_filter + " que contém a palavra: " + substring +
-                    ", ordenadas por " + sort_filter;
-
-    let $message_title = document.querySelector("#message_title");
-    $message_title.innerText = message;
-    let $message_p = document.querySelector("#message_p");
-    $message_p.innerText = "Para alterar os critérios de listagem, volte para a página anterior.";
-    let $back_button = document.querySelector("#back_button");
-    $back_button.addEventListener("click", () => {
-        window.location.hash = "/campaigns/all";
-        init();
-    });
-
-    fetch_campaigns(sort, status, substring);
-
-    let $search_input = document.querySelector("#search_input")
-    $search_input.addEventListener("keyup", refresh_filtered_campaigns_table);
+function create_campaign_object (name, description, deadline, goal) {
+    let campaign = {};
+    campaign.name = name;
+    campaign.url = ((name) => {
+        let url = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g," ").replace(/\s{2,}/g," ").trim().replace(/ /g,"-");
+        return url;
+    }) (name);
+    campaign.description = description;
+    campaign.deadline = deadline;
+    campaign.goal = goal;
+    return campaign;
 }
 
-function refresh_filtered_campaigns_table () {
-     // Declare variables
-     var input, filter, table, tr, td, i, txtValue;
-     input = document.querySelector("#search_input").value
-     filter = input.toUpperCase();
-     table = document.getElementById("campaigns_table");
-     tr = table.getElementsByTagName("tr");
- 
-     // Loop through all table rows, and hide those who don't match the search query
-     for (i = 0; i < tr.length; i++) {
-         td = tr[i].getElementsByTagName("td")[0];
-         if (td) {
-             txtValue = td.textContent || td.innerText;
-             if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                 tr[i].style.display = "";
-             } else {
-                 tr[i].style.display = "none";
-             }
-         }
-     }
+function is_in_the_past (date) {
+    let today = new Date();
+    let dd = String(today.getDate()).padStart(2, '0');
+    let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    let yyyy = today.getFullYear();
+
+    if (parseInt(date.substring(6)) > parseInt(yyyy))
+        return false;
+    else if (parseInt(date.substring(3,5)) > parseInt(mm))
+        return false;
+    else if (parseInt(date.substring(0,2)) > parseInt(dd))
+        return false;
+    else 
+        return true;
 }
 
-function fetch_campaigns(sort, status, substring) {
-    let route;
-    if (substring === "")
-        route = API + "/campaigns/all/filter-by/" + sort + "/" + status;
-    else
-        route = API + "/campaigns/all/filter-by/" + sort + "/" + status + "/" + substring;
-    let $table = document.querySelector("#campaigns_table");
-    $table.innerText = "";
-    fetch (route, {
-        "method":"GET",
-        "headers":{"Content-Type":"application/json"}
+function cancel () {
+    $message_div.innerHTML = "";
+    window.location.hash === "/home"
+    init();
+}
+
+// ********** End of auxiliary functions **********
+
+// ********** Functions to load logged or not logged info **********
+//                     (in the top of the page)
+
+function is_logged () {
+    if (storage.getItem("token") === "null") return false;
+    else return valid_token;
+}
+
+async function valid_token () {
+    fetch(API + "/auth/valid-token", {
+        method:"GET",
+        headers: {"Content-Type":"application/json",
+                    "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => r.json())
     .then (d => {
-        $table.innerText = "";
-        if (d.length === 0) {
-            // TODO: mensagem de nenhuma campanha cadastrada
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
-
-                $cell1.innerText = element.name;
-                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
-                $cell3.innerText = element.deadline;
-
-                let $campaign_button = document.createElement("BUTTON");
-                $campaign_button.innerText = "Ver página da campanha";
-                $campaign_button.addEventListener("click", () => {
-                    window.location.hash = "/campaigns/" + element.url;
-                    init();
-                });
-                $cell4.appendChild($campaign_button);
-
-                i++;
-            });
-        }
+        return d;
     });
 }
+
+function load_logged_view () {
+    let $template = document.querySelector("#logged_view");
+    $top.innerHTML = $template.innerHTML;
+
+    let $load_profile_page_button = document.querySelector("#load_profile_page_button");
+    $load_profile_page_button.addEventListener("click", () => {
+        window.location.hash = "/users/" + storage.getItem("user_email");
+        init();
+    });
+
+    let $logout_button = document.querySelector("#logout_button");
+    $logout_button.addEventListener("click", () => {
+        storage.setItem("user_email", null);
+        storage.setItem("token", null);
+        cancel();
+    });
+
+    let $p = document.querySelector("#hello_message");
+    let $user;
+
+    let headers = new Headers();
+    headers.append("Authorization", "Bearer " + storage.getItem("token"));
+    fetch(API + "/users/auth", {
+        method:"GET",
+        headers: headers
+    })
+    .then(r => {
+
+        if (r.status === 403 || r.status === 500) {
+            storage.setItem("token", null);
+            init();
+        } else 
+            return r.json()
+    })
+    .then(d => {
+        if (d !== undefined) {
+            $user = d;
+            $p.innerText = "Olá " + $user.fname + " " + $user.lname;
+        }
+    });
+
+}
+
+function fetch_user_info (email) {
+    fetch (API + "/users/" + email, {
+        method:"GET",
+        headers: {"Content-Type":"application/json"}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        let $user_name = document.querySelector("#user_name");
+        $user_name.innerText = d.fname + " " + d.lname;
+
+        let $user_email = document.querySelector("#user_email");
+        $user_email.innerText = d.email;
+    });
+}
+
+function load_not_logged_view () {
+    let $template = document.querySelector("#not_logged_view");
+    $top.innerHTML = $template.innerHTML;
+
+    let $sign_up_button = document.querySelector("#sign_up_button");
+    $sign_up_button.addEventListener("click", () => {
+        window.location.hash = "/sign-up";
+        init();
+    });
+
+    let $sign_in_button = document.querySelector("#sign_in_button");
+    $sign_in_button.addEventListener("click", () => {
+        window.location.hash = "/sign-in";
+        init();
+    });
+}
+
+// ********** End of logged/ not logged functions **********
+
+// ********** Functions to load home page info **********
 
 function load_home_view () {
     let $template = document.querySelector("#home_view");
@@ -295,510 +279,21 @@ function fetch_top_5_campaigns (sort, status) {
     });
 }
 
-function load_campaign_view (campaign_url) {
+// ********** End of home page functions **********
 
-    fetch (API + "/campaigns/" + campaign_url, {
-        "method":"GET",
-        "headers":{"Content-Type":"application/json"}
-    })
-    .then (r => {
-        if (!r.ok) {
-            if (r.status === 404) {
-                $message_div.innerText = "Campanha não encontrada.";
-                $message_div.append(document.createElement("hr"));
-            }
-        } else {
-            return r.json();
-        }
-    })
-    .then(d => {
-        $message_div.innerHTML = "";
-        if (d != undefined) {
-            // Load campaign info:
-            let $template = document.querySelector("#campaign_view");
-            $body.innerHTML = $template.innerHTML;
+// ********** Functions to load account views (sign up and sign in) **********
 
-            let $campaign = document.querySelector("#campaign_div");
+function load_sign_in_view () {
+    let $template = document.querySelector("#sign_in_view");
+    $top.innerHTML = $template.innerHTML;
 
-            let $name = document.querySelector("#name");
-            $name.innerText = d.name;
-
-            let $owner = document.querySelector("#owner");
-            $owner.innerText = "Criada por: " + d.owner;
-            
-            let $description = document.querySelector("#description");
-            $description.innerText = d.description;
-
-            let $status = document.querySelector("#status");
-            $status.innerText = "Status: " + d.status;
-
-            let $progress = document.querySelector("#progress");
-            $progress.innerText = "Progresso da campanha:\nR$" + 
-                                    Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
-            let $donate_button = document.querySelector("#donate_button");
-            $donate_button.addEventListener("click", () => {
-                window.location.hash = "/campaigns/" + d.url + "/donate";
-                load_donate_view (d);
-            });
-            let $see_donations_button = document.querySelector("#see_donations_button");
-            $see_donations_button.addEventListener("click", () => {
-                window.location.hash = "/campaigns/" + d.url + "/donations";
-                load_donate_history_view(d);
-            });
-
-            let $deadline = document.querySelector("#deadline");
-            $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
-
-            let $likes = document.querySelector("#likes");
-            $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
-            
-            // Load like options
-            let $like_button = document.querySelector("#like_button");
-            if (d.likes.includes(storage.getItem("user_email")))
-                $like_button.innerText = "Retirar curtida";
-            else
-                $like_button.innerText = "Curtir";
-            $like_button.addEventListener("click", () => {
-                to_like(d, $likes, $like_button);
-            })
-
-            let $back_button = document.querySelector("#back_button");
-            $back_button.addEventListener("click", () => {
-                window.location.hash = "/home";
-                init();
-            });
-            $campaign.appendChild($back_button);
-
-            // Load comments info and options:
-            fetch_campaign_comments(d.url);
-
-            let $comment_button = document.querySelector("#comment_button");
-            $comment_button.addEventListener("click", () => {
-                let $comment_input = document.querySelector("#comment_input");
-                let text = $comment_input.value;
-                $comment_input.value = "";
-                to_comment(d.url, text);
-            });
-        }
+    let $sign_in = document.querySelector("#sign_in");
+    $sign_in.addEventListener("click", sign_in);
+    let $cancel = document.querySelector("#cancel");
+    $cancel.addEventListener("click", () => {
+        window.location.hash = "/home";
+        cancel();
     });
-}
-
-function load_donations_history_view (campaign) {
-    let $template = document.querySelector("#doante_history_view");
-    $body.innerHTML = $template.innerHTML;
-
-    let $campaign_name = document.querySelector("#campaign_name");
-
-    let $back_button = document.querySelector("#back_button");
-    $back_button.addEventListener("click", () => {
-        load_campaign_view(campaign.url);
-    });
-    $campaign_name.innerText = campaign.name;
-
-    load_donations_history (campaign);
-}
-
-function load_donations_history_view_indirectly (url) {
-    fetch (API + "/campaigns/" + url, {
-        "method":"GET",
-        "headers":{"Content-Type":"application/json"}
-    })
-    .then (r => {
-        return r.json();
-    })
-    .then (d => {
-        load_donations_history_view (d);
-    });
-}
-
-function load_donations_history (campaign) {
-    let $table = document.querySelector("#donations_table");
-    $table.innerText = "";
-    fetch (API + "/campaigns/" + campaign.url + "/donations", {
-        "method":"GET",
-        "headers":{"Content-Type":"application/json"}
-    })
-    .then (r =>{
-        return r.json();
-    })
-    .then (d => {
-        if (d.length === 0) {
-            // TODO
-        } else {
-            let i = 0;
-            d.forEach(element => {
-                let $row = $table.insertRow(i);
-
-                let $cell1 = $row.insertCell(0);
-                let $cell2 = $row.insertCell(1);
-                let $cell3 = $row.insertCell(2);
-                let $cell4 = $row.insertCell(3);
-
-                $cell1.innerText = element.owner;
-                $cell2.innerText = "R$" + element.amount;
-                $cell3.innerText = element.date;
-
-                let $user_button = document.createElement("BUTTON");
-                $user_button.innerText = "Ver página do usuário";
-                $user_button.addEventListener("click", () => {
-                    window.location.hash = "/users/" + element.owner;
-                    init();
-                });
-                $cell4.appendChild($user_button);
-
-                i++;
-            });
-        }
-    });
-}
-
-function load_donate_view (campaign) {
-
-    let $template = document.querySelector("#donate_view");
-    $body.innerHTML = $template.innerHTML;
-
-    let $message_title = document.querySelector("#message_title");
-    $message_title.innerText = "Fazer uma doação para: " + campaign.name;
-
-
-    let $confirm_donate_button = document.querySelector("#confirm_donate_button");
-    $confirm_donate_button.addEventListener("click", () => {
-        donate(campaign.url);
-    });
-
-    let $back_to_campaign_button = document.querySelector("#back_to_campaign_button");
-    $back_to_campaign_button.addEventListener("click", () => {
-        window.location.hash = "/campaigns/" + campaign.url;
-        init();
-    });
-}
-
-function load_donate_view_indirectly (url) {
-    fetch (API + "/campaigns/" + url, {
-        method:"GET",
-        headers: {"Content-Type":"application/json",
-        "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => {
-        return r.json();
-    })
-    .then (d => {
-        load_donate_view (d);
-    })
-}
-
-function donate (url) {
-    let $donation_value = document.querySelector("#donation_value");
-    let amount = $donation_value.value.replace(',','.').replace(' ','');
-    fetch (API + "/campaigns/" + url + "/donations", {
-        method:"POST",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")},
-        body:`{"amount":"${amount}"}`
-    })
-    .then (r => {
-        //TODO: tratar possíveis erros de not found ou unauthorized
-        return r.json();
-    })
-    .then (d => {
-        //todo: mensagem de sucesso na doação
-        window.location.hash = "/campaigns/" + d.campaign;
-        init();
-    });
-}
-
-function to_like (campaign, $likes, $like_button) {
-    fetch (API + "/campaigns/" + campaign.url + "/likes", {
-        method:"POST",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => r.json())
-    .then (d => {
-        $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
-        if (d.likes.includes(storage.getItem("user_email")))
-            $like_button.innerText = "Retirar curtida";
-        else
-            $like_button.innerText = "Curtir";
-    });
-}
-
-function to_comment (url, text) {
-    fetch (API + "/campaigns/" + url + "/comments", {
-        method:"POST",
-        headers: {"Content-Type":"application/json",
-        "Authorization":"Bearer " + storage.getItem("token")},
-        body:`{"text":"${text}"}`
-    })
-    .then (r => {
-        //todo: tratar possíveis erros como 404 para uma camapnha que não existe
-        return r.json();
-    })
-    .then (d => {
-        // todo: mostrar ou retirar mensagens
-        // Depois de adicionar o comentário, faz o refresh dos comentários
-        fetch_campaign_comments(url);
-    });
-}
-
-function fetch_campaign_comments (url) {
-    let $table = document.querySelector("#comments_table");
-    $table.innerText = "";
-    fetch (API + "/campaigns/" + url + "/comments", {
-        method:"GET",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then(r => r.json()
-    )
-    .then(d => {
-        let i = 0;
-        d.forEach(element => {
-            let $row = $table.insertRow(i);
-
-            let $cell1 = $row.insertCell(0);
-            let $cell2 = $row.insertCell(1);
-            let $cell3 = $row.insertCell(2);
-
-            $cell1.innerText = element.owner + " diz: ";
-            $cell2.innerText = element.text;
-            let $answer_button = document.createElement("BUTTON");
-            $answer_button.innerText = "Responder";
-            $answer_button.addEventListener("click", () => {
-                load_answer_view(element);
-            });
-
-            $cell3.appendChild(document.createElement("BR"));
-            $cell3.appendChild($answer_button);
-
-            let logged_user_email = storage.getItem("user_email");
-            if (logged_user_email === element.owner) {
-                let $cell4 = $row.insertCell(3);
-                let $delete_comment_button = document.createElement("BUTTON");
-                $delete_comment_button.innerText = "Deletar comentário";
-                $delete_comment_button.addEventListener("click", () => {
-                    delete_comment(element);
-                });
-                $cell4.appendChild(document.createElement("BR"));
-                $cell4.appendChild($delete_comment_button);
-            }
-        })
-    });
-}
-
-function load_answer_view (comment) {
-    let $template = document.querySelector("#answer_view");
-    $body.innerHTML = $template.innerHTML;
-
-    let $campaign_name = document.querySelector("#campaign_name");
-
-    let $back_button = document.querySelector("#back_button");
-    $back_button.addEventListener("click", () => {
-        load_campaign_view(comment.campaign);
-    });
-
-    let $comment_info = document.querySelector("#comment_info");
-
-    $campaign_name.innerText = comment.campaign;
-    $comment_info.innerText = comment.owner + " diz: " + comment.text;
-
-    let $answer_button = document.querySelector("#answer_button");
-    $answer_button.addEventListener("click", () => {
-        let $answer_input = document.querySelector("#answer_input");
-        let text = $answer_input.value;
-        $answer_input.value = "";
-        to_answer(comment, text);
-    });
-
-    fetch_comment_answers(comment);
-}
-
-function to_answer (comment, text) {
-    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
-        method:"POST",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")},
-        body:`{"text":"${text}"}`
-    })
-    .then (r => {
-        return r.json();
-    })
-    .then (d => {
-        fetch_comment_answers(comment);
-    })
-}
-
-function fetch_comment_answers (comment) {
-    let $table = document.querySelector("#answers_table");
-    $table.innerText = "";
-    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
-        method:"GET",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then(r => {
-        return r.json()
-    })
-    .then(d => {
-        let i = 0;
-        d.forEach(element => {
-            let $row = $table.insertRow(i);
-
-            let $cell1 = $row.insertCell(0);
-            let $cell2 = $row.insertCell(1);
-
-            $cell1.innerText = element.owner + " diz: ";
-            $cell2.innerText = element.text;
-
-            let logged_user_email = storage.getItem("user_email");
-            if (logged_user_email === element.owner) {
-                let $cell3 = $row.insertCell(2);
-                let $delete_answer_button = document.createElement("BUTTON");
-                $delete_answer_button.innerText = "Deletar resposta";
-                $delete_answer_button.addEventListener("click", () => {
-                    delete_answer(comment, element);
-                });
-                $cell3.appendChild(document.createElement("BR"));
-                $cell3.appendChild($delete_answer_button);
-            }
-        })
-    });
-}
-
-function delete_answer (comment, answer) {
-    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + answer.id, {
-        method:"DELETE",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => {
-        return r.json();
-    })
-    .then (d => {
-        fetch_comment_answers(comment);
-    });
-}
-
-function delete_comment (comment) {
-    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id, {
-        method:"DELETE",
-        headers: {"Content-Type":"application/json",
-                  "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => {
-        return r.json();
-    })
-    .then (d => {
-        fetch_campaign_comments(comment.campaign);
-    });
-}
-
-function load_create_campaign_view () {
-    if (!is_logged()) {
-
-        let $campaigns_options = document.querySelector("#campaigns_options");
-        $campaigns_options.innerHTML = "";
-
-        let $p = document.createElement("P");
-        $p.innerText = "Você precisa estar logado para criar uma campanha.";
-
-        let $back_button = document.createElement("BUTTON");
-        $back_button.innerText = "Voltar";
-        $back_button.addEventListener("click", () => {
-            window.location.hash = "/home";
-            init();
-        });
-
-        $campaigns_options.appendChild($p);
-        $campaigns_options.appendChild($back_button);
-    } else {
-
-        let $template = document.querySelector("#create_campaign_view");
-        $body.innerHTML = $template.innerHTML;
-
-        let $cancel = document.querySelector("#cancel");
-        $cancel.addEventListener("click", () => {
-            window.location.hash = "/home";
-            cancel();
-        });
-
-        let $create_campaign_button = document.querySelector("#create_campaign_button")
-        $create_campaign_button.addEventListener("click", create_campaign);
-    }
-}
-
-function create_campaign () {
-    let name = document.querySelector("#name").value;
-    let description = document.querySelector("#description").value;
-    let deadline = document.querySelector("#deadline").value;
-    let goal = document.querySelector("#goal").value.replace(',','.').replace(' ','');
-
-    if (deadline.length !== 10 || is_in_the_past(deadline)) {
-        $message_div.innerText = "Data inválida. Escreva uma data no formato dd/mm/yyyy e que ainda não tenha se passado.";
-    } else {
-        $message_div.innerText = "";
-        let campaign = create_campaign_object(name, description, deadline, goal);
-        let $message_span = document.querySelector("#message_span");
-        fetch (API + "/campaigns/create", {
-            method:"POST",
-            headers: {"Content-Type":"application/json",
-                      "Authorization":"Bearer " + storage.getItem("token")},
-            body: JSON.stringify(campaign)
-        })
-        .then(r => {
-            if (r.status === 403)
-                $message_span.innerText = "Já existe uma campanha com esse nome, tente outro"
-            else {
-                $message_span.innerText = "";
-                return r.json();
-            }
-        })
-        .then(d => {
-            if (d !== undefined) {
-                window.location.hash = "/campaigns/" + d.url;
-                init();
-            }
-        });
-    }
-}
-
-function is_in_the_past (date) {
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
-
-    if (parseInt(date.substring(6)) > parseInt(yyyy))
-        return false;
-    else if (parseInt(date.substring(3,5)) > parseInt(mm))
-        return false;
-    else if (parseInt(date.substring(0,2)) > parseInt(dd))
-        return false;
-    else 
-        return true;
-}
-
-function is_logged () {
-    if (storage.getItem("token") === "null") return false;
-    else return valid_token;
-}
-
-async function valid_token () {
-    fetch(API + "/auth/valid-token", {
-        method:"GET",
-        headers: {"Content-Type":"application/json",
-                    "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => r.json())
-    .then (d => {
-        return d;
-    });
-}
-
-function cancel () {
-    $message_div.innerHTML = "";
-    window.location.hash === "/home"
-    init();
 }
 
 function load_sign_up_view () {
@@ -814,53 +309,7 @@ function load_sign_up_view () {
     });
 }
 
-function sign_up () {
-
-    let email = document.querySelector("#email").value;
-    let fname = document.querySelector("#fname").value;
-    let lname = document.querySelector("#lname").value;
-    let password = document.querySelector("#password").value;
-    let credit_card = document.querySelector("#credit_card").value;
-
-    let user = create_user_object(email, fname, lname, password, credit_card);
-
-    fetch(API + "/users", {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body:JSON.stringify(user)
-    })
-    .then(r => {
-        if (r.ok) return r.json();
-        else {
-            $message_div.innerText = "Email já cadastrado, tente novamente";
-            $message_div.append(document.createElement("hr"));
-        }
-    })
-    .then(d => {
-        if (d != undefined) {
-            $message_div.innerText = "Usuário cadastrado com sucesso!";
-            $message_div.append(document.createElement("hr"));
-        setTimeout(_ => {
-            $message_div.innerHTML = "";
-        }, 2000);
-        window.location.hash = "/home";
-        init();
-    }
-    });
-}
-
-function load_sign_in_view () {
-    let $template = document.querySelector("#sign_in_view");
-    $top.innerHTML = $template.innerHTML;
-
-    let $sign_in = document.querySelector("#sign_in");
-    $sign_in.addEventListener("click", sign_in);
-    let $cancel = document.querySelector("#cancel");
-    $cancel.addEventListener("click", () => {
-        window.location.hash = "/home";
-        cancel();
-    });
-}
+// ---------- Functions to do account actions ----------
 
 function sign_in () {
     let email = document.querySelector("#email").value;
@@ -901,22 +350,44 @@ function sign_in () {
     });
 }
 
-function load_not_logged_view () {
-    let $template = document.querySelector("#not_logged_view");
-    $top.innerHTML = $template.innerHTML;
+function sign_up () {
 
-    let $sign_up_button = document.querySelector("#sign_up_button");
-    $sign_up_button.addEventListener("click", () => {
-        window.location.hash = "/sign-up";
-        init();
-    });
+    let email = document.querySelector("#email").value;
+    let fname = document.querySelector("#fname").value;
+    let lname = document.querySelector("#lname").value;
+    let password = document.querySelector("#password").value;
+    let credit_card = document.querySelector("#credit_card").value;
 
-    let $sign_in_button = document.querySelector("#sign_in_button");
-    $sign_in_button.addEventListener("click", () => {
-        window.location.hash = "/sign-in";
+    let user = create_user_object(email, fname, lname, password, credit_card);
+
+    fetch(API + "/users", {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body:JSON.stringify(user)
+    })
+    .then(r => {
+        if (r.ok) return r.json();
+        else {
+            $message_div.innerText = "Email já cadastrado, tente novamente";
+            $message_div.append(document.createElement("hr"));
+        }
+    })
+    .then(d => {
+        if (d != undefined) {
+            $message_div.innerText = "Usuário cadastrado com sucesso!";
+            $message_div.append(document.createElement("hr"));
+        setTimeout(_ => {
+            $message_div.innerHTML = "";
+        }, 2000);
+        window.location.hash = "/home";
         init();
+    }
     });
 }
+
+// ********** End of account functions **********
+
+// ********** Functions to load User's profile **********
 
 function load_profile_page (email) {
     let $template = document.querySelector("#profile_page");
@@ -1037,62 +508,633 @@ function fetch_user_campaigns(email, substring) {
     });
 }
 
-function fetch_user_info (email) {
-    fetch (API + "/users/" + email, {
+// ********** End of user's profile functions **********
+
+// ********** Function to create a new campaign **********
+
+function load_create_campaign_view () {
+    if (!is_logged()) {
+
+        let $campaigns_options = document.querySelector("#campaigns_options");
+        $campaigns_options.innerHTML = "";
+
+        let $p = document.createElement("P");
+        $p.innerText = "Você precisa estar logado para criar uma campanha.";
+
+        let $back_button = document.createElement("BUTTON");
+        $back_button.innerText = "Voltar";
+        $back_button.addEventListener("click", () => {
+            window.location.hash = "/home";
+            init();
+        });
+
+        $campaigns_options.appendChild($p);
+        $campaigns_options.appendChild($back_button);
+    } else {
+
+        let $template = document.querySelector("#create_campaign_view");
+        $body.innerHTML = $template.innerHTML;
+
+        let $cancel = document.querySelector("#cancel");
+        $cancel.addEventListener("click", () => {
+            window.location.hash = "/home";
+            cancel();
+        });
+
+        let $create_campaign_button = document.querySelector("#create_campaign_button")
+        $create_campaign_button.addEventListener("click", create_campaign);
+    }
+}
+
+// -=-=-=-=-=- Create campaign action -=-=-=-=-=-
+
+function create_campaign () {
+    let name = document.querySelector("#name").value;
+    let description = document.querySelector("#description").value;
+    let deadline = document.querySelector("#deadline").value;
+    let goal = document.querySelector("#goal").value.replace(',','.').replace(' ','');
+
+    if (deadline.length !== 10 || is_in_the_past(deadline)) {
+        $message_div.innerText = "Data inválida. Escreva uma data no formato dd/mm/yyyy e que ainda não tenha se passado.";
+    } else {
+        $message_div.innerText = "";
+        let campaign = create_campaign_object(name, description, deadline, goal);
+        let $message_span = document.querySelector("#message_span");
+        fetch (API + "/campaigns/create", {
+            method:"POST",
+            headers: {"Content-Type":"application/json",
+                      "Authorization":"Bearer " + storage.getItem("token")},
+            body: JSON.stringify(campaign)
+        })
+        .then(r => {
+            if (r.status === 403)
+                $message_span.innerText = "Já existe uma campanha com esse nome, tente outro"
+            else {
+                $message_span.innerText = "";
+                return r.json();
+            }
+        })
+        .then(d => {
+            if (d !== undefined) {
+                window.location.hash = "/campaigns/" + d.url;
+                init();
+            }
+        });
+    }
+}
+
+// ********** End of campaigns creation funcions **********
+
+// ********** Functions to load campaigns listing **********
+
+function load_all_campaigns_view () {
+    let $template = document.querySelector("#all_campaigns_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        window.location.hash = "/home";
+        init();
+    });
+
+    let $search_input = document.querySelector("#search_input");
+    let $campaigns_filter = document.querySelector("#campaigns_filter");
+    let $sort_parameter = document.querySelector("#sort_parameter");
+    let $search_campaigns_button = document.querySelector("#search_campaigns_button");
+
+    fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
+   
+    $search_campaigns_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
+        load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+    });
+
+    $campaigns_filter.onchange = function() {
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
+    };
+    $sort_parameter.onchange = function() {
+        fetch_campaigns($sort_parameter.value, $campaigns_filter.value, "");
+    };
+}
+
+function load_filtered_campaigns_view (sort, status, substring) {
+    let $template = document.querySelector("#filtered_campaigns_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let status_filter;
+    if (status === "active")
+        status_filter = "Listando campanhas ativas";
+    else if (status === "concluded")
+        status_filter = "Listando campanhas concluídas";
+    else if (status === "expired")
+        status_filter = "Listando campanhas vencidas";
+    else
+        status_filter = "Listando todas as campanhas"
+
+    let sort_filter;
+    if (sort === "likes")
+        sort_filter = "curtidas";
+    else if (sort === "deadline")
+        sort_filter = "data de vencimento";
+    else
+        sort_filter = "doações";
+
+    let message;
+    if (substring === "")
+        message = status_filter + ", ordenadas por " + sort_filter;
+    else
+        message = status_filter + " que contém a palavra: " + substring +
+                    ", ordenadas por " + sort_filter;
+
+    let $message_title = document.querySelector("#message_title");
+    $message_title.innerText = message;
+    let $message_p = document.querySelector("#message_p");
+    $message_p.innerText = "Para alterar os critérios de listagem, volte para a página anterior.";
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/all";
+        init();
+    });
+
+    fetch_campaigns(sort, status, substring);
+
+    let $search_input = document.querySelector("#search_input")
+    $search_input.addEventListener("keyup", refresh_filtered_campaigns_table);
+}
+
+function refresh_filtered_campaigns_table () {
+     let input, filter, table, tr, td, i, txtValue;
+     input = document.querySelector("#search_input").value
+     filter = input.toUpperCase();
+     table = document.getElementById("campaigns_table");
+     tr = table.getElementsByTagName("tr");
+ 
+     for (i = 0; i < tr.length; i++) {
+         td = tr[i].getElementsByTagName("td")[0];
+         if (td) {
+             txtValue = td.textContent || td.innerText;
+             if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                 tr[i].style.display = "";
+             } else {
+                 tr[i].style.display = "none";
+             }
+         }
+     }
+}
+
+function fetch_campaigns(sort, status, substring) {
+    let route;
+    if (substring === "")
+        route = API + "/campaigns/all/filter-by/" + sort + "/" + status;
+    else
+        route = API + "/campaigns/all/filter-by/" + sort + "/" + status + "/" + substring;
+    let $table = document.querySelector("#campaigns_table");
+    $table.innerText = "";
+    fetch (route, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => r.json())
+    .then (d => {
+        $table.innerText = "";
+        if (d.length === 0) {
+            // TODO: mensagem de nenhuma campanha cadastrada
+        } else {
+            let i = 0;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+
+                $cell1.innerText = element.name;
+                $cell2.innerText = "R$" + element.donations + " / R$" + element.goal;
+                $cell3.innerText = element.deadline;
+
+                let $campaign_button = document.createElement("BUTTON");
+                $campaign_button.innerText = "Ver página da campanha";
+                $campaign_button.addEventListener("click", () => {
+                    window.location.hash = "/campaigns/" + element.url;
+                    init();
+                });
+                $cell4.appendChild($campaign_button);
+
+                i++;
+            });
+        }
+    });
+}
+
+// ********** End of campaigns listing functions **********
+
+// ********** Functions to load campaigns pages **********
+
+// -=-=-=-=-=- Campaigns main page -=-=-=-=-=-
+
+function load_campaign_view (campaign_url) {
+
+    fetch (API + "/campaigns/" + campaign_url, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => {
+        if (!r.ok) {
+            if (r.status === 404) {
+                $message_div.innerText = "Campanha não encontrada.";
+                $message_div.append(document.createElement("hr"));
+            }
+        } else {
+            return r.json();
+        }
+    })
+    .then(d => {
+        $message_div.innerHTML = "";
+        if (d != undefined) {
+            // Load campaign info:
+            let $template = document.querySelector("#campaign_view");
+            $body.innerHTML = $template.innerHTML;
+
+            let $campaign = document.querySelector("#campaign_div");
+
+            let $name = document.querySelector("#name");
+            $name.innerText = d.name;
+
+            let $owner = document.querySelector("#owner");
+            $owner.innerText = "Criada por: " + d.owner;
+            
+            let $description = document.querySelector("#description");
+            $description.innerText = d.description;
+
+            let $status = document.querySelector("#status");
+            $status.innerText = "Status: " + d.status;
+
+            let $progress = document.querySelector("#progress");
+            $progress.innerText = "Progresso da campanha:\nR$" + 
+                                    Number(d.donations).toFixed(2) + " / R$" + Number(d.goal).toFixed(2);
+            let $donate_button = document.querySelector("#donate_button");
+            $donate_button.addEventListener("click", () => {
+                window.location.hash = "/campaigns/" + d.url + "/donate";
+                load_donate_view (d);
+            });
+            let $see_donations_button = document.querySelector("#see_donations_button");
+            $see_donations_button.addEventListener("click", () => {
+                window.location.hash = "/campaigns/" + d.url + "/donations";
+                load_donations_history_view(d);
+            });
+
+            let $deadline = document.querySelector("#deadline");
+            $deadline.innerText = "Data de término da campanha:\n" + d.deadline;
+
+            let $likes = document.querySelector("#likes");
+            $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
+            
+            // Load like options
+            let $like_button = document.querySelector("#like_button");
+            if (d.likes.includes(storage.getItem("user_email")))
+                $like_button.innerText = "Retirar curtida";
+            else
+                $like_button.innerText = "Curtir";
+            $like_button.addEventListener("click", () => {
+                to_like(d, $likes, $like_button);
+            })
+
+            let $back_button = document.querySelector("#back_button");
+            $back_button.addEventListener("click", () => {
+                window.location.hash = "/home";
+                init();
+            });
+            $campaign.appendChild($back_button);
+
+            // Load comments info and options:
+            fetch_campaign_comments(d.url);
+
+            let $comment_button = document.querySelector("#comment_button");
+            $comment_button.addEventListener("click", () => {
+                let $comment_input = document.querySelector("#comment_input");
+                let text = $comment_input.value;
+                $comment_input.value = "";
+                to_comment(d.url, text);
+            });
+        }
+    });
+}
+
+function fetch_campaign_comments (url) {
+    let $table = document.querySelector("#comments_table");
+    $table.innerText = "";
+    fetch (API + "/campaigns/" + url + "/comments", {
         method:"GET",
-        headers: {"Content-Type":"application/json"}
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then(r => r.json()
+    )
+    .then(d => {
+        let i = 0;
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+            let $cell3 = $row.insertCell(2);
+
+            $cell1.innerText = element.owner + " diz: ";
+            $cell2.innerText = element.text;
+            let $answer_button = document.createElement("BUTTON");
+            $answer_button.innerText = "Responder";
+            $answer_button.addEventListener("click", () => {
+                load_answer_view(element);
+            });
+
+            $cell3.appendChild(document.createElement("BR"));
+            $cell3.appendChild($answer_button);
+
+            let logged_user_email = storage.getItem("user_email");
+            if (logged_user_email === element.owner) {
+                let $cell4 = $row.insertCell(3);
+                let $delete_comment_button = document.createElement("BUTTON");
+                $delete_comment_button.innerText = "Deletar comentário";
+                $delete_comment_button.addEventListener("click", () => {
+                    delete_comment(element);
+                });
+                $cell4.appendChild(document.createElement("BR"));
+                $cell4.appendChild($delete_comment_button);
+            }
+        })
+    });
+}
+
+// -=-=-=-=-=- Campaigns actions -=-=-=-=-=-
+
+function load_donate_view_indirectly (url) {
+    fetch (API + "/campaigns/" + url, {
+        method:"GET",
+        headers: {"Content-Type":"application/json",
+        "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
         return r.json();
     })
     .then (d => {
-        let $user_name = document.querySelector("#user_name");
-        $user_name.innerText = d.fname + " " + d.lname;
-
-        let $user_email = document.querySelector("#user_email");
-        $user_email.innerText = d.email;
-    });
+        load_donate_view (d);
+    })
 }
 
-function load_logged_view () {
-    let $template = document.querySelector("#logged_view");
-    $top.innerHTML = $template.innerHTML;
+function load_donate_view (campaign) {
 
-    let $load_profile_page_button = document.querySelector("#load_profile_page_button");
-    $load_profile_page_button.addEventListener("click", () => {
-        window.location.hash = "/users/" + storage.getItem("user_email");
+    let $template = document.querySelector("#donate_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $message_title = document.querySelector("#message_title");
+    $message_title.innerText = "Fazer uma doação para: " + campaign.name;
+
+
+    let $confirm_donate_button = document.querySelector("#confirm_donate_button");
+    $confirm_donate_button.addEventListener("click", () => {
+        donate(campaign.url);
+    });
+
+    let $back_to_campaign_button = document.querySelector("#back_to_campaign_button");
+    $back_to_campaign_button.addEventListener("click", () => {
+        window.location.hash = "/campaigns/" + campaign.url;
         init();
     });
+}
 
-    let $logout_button = document.querySelector("#logout_button");
-    $logout_button.addEventListener("click", () => {
-        storage.setItem("user_email", null);
-        storage.setItem("token", null);
-        cancel();
+function donate (url) {
+    let $donation_value = document.querySelector("#donation_value");
+    let amount = $donation_value.value.replace(',','.').replace(' ','');
+    fetch (API + "/campaigns/" + url + "/donations", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")},
+        body:`{"amount":"${amount}"}`
+    })
+    .then (r => {
+        //TODO: tratar possíveis erros de not found ou unauthorized
+        return r.json();
+    })
+    .then (d => {
+        //todo: mensagem de sucesso na doação
+        window.location.hash = "/campaigns/" + d.campaign;
+        init();
+    });
+}
+
+function to_like (campaign, $likes, $like_button) {
+    fetch (API + "/campaigns/" + campaign.url + "/likes", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => r.json())
+    .then (d => {
+        $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
+        if (d.likes.includes(storage.getItem("user_email")))
+            $like_button.innerText = "Retirar curtida";
+        else
+            $like_button.innerText = "Curtir";
+    });
+}
+
+// ---------- Comments and answers ----------
+
+function to_comment (url, text) {
+    fetch (API + "/campaigns/" + url + "/comments", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+        "Authorization":"Bearer " + storage.getItem("token")},
+        body:`{"text":"${text}"}`
+    })
+    .then (r => {
+        //todo: tratar possíveis erros como 404 para uma camapnha que não existe
+        return r.json();
+    })
+    .then (d => {
+        // todo: mostrar ou retirar mensagens
+        // Depois de adicionar o comentário, faz o refresh dos comentários
+        fetch_campaign_comments(url);
+    });
+}
+
+function delete_comment (comment) {
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id, {
+        method:"DELETE",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        fetch_campaign_comments(comment.campaign);
+    });
+}
+
+function load_answer_view (comment) {
+    let $template = document.querySelector("#answer_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $campaign_name = document.querySelector("#campaign_name");
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        load_campaign_view(comment.campaign);
     });
 
-    let $p = document.querySelector("#hello_message");
-    let $user;
+    let $comment_info = document.querySelector("#comment_info");
 
-    let headers = new Headers();
-    headers.append("Authorization", "Bearer " + storage.getItem("token"));
-    fetch(API + "/users/auth", {
+    $campaign_name.innerText = comment.campaign;
+    $comment_info.innerText = comment.owner + " diz: " + comment.text;
+
+    let $answer_button = document.querySelector("#answer_button");
+    $answer_button.addEventListener("click", () => {
+        let $answer_input = document.querySelector("#answer_input");
+        let text = $answer_input.value;
+        $answer_input.value = "";
+        to_answer(comment, text);
+    });
+
+    fetch_comment_answers(comment);
+}
+
+function to_answer (comment, text) {
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
+        method:"POST",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")},
+        body:`{"text":"${text}"}`
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        fetch_comment_answers(comment);
+    })
+}
+
+function fetch_comment_answers (comment) {
+    let $table = document.querySelector("#answers_table");
+    $table.innerText = "";
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + comment.id + "/answers", {
         method:"GET",
-        headers: headers
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then(r => {
-
-        if (r.status === 403 || r.status === 500) {
-            storage.setItem("token", null);
-            init();
-        } else 
-            return r.json()
+        return r.json()
     })
     .then(d => {
-        if (d !== undefined) {
-            $user = d;
-            $p.innerText = "Olá " + $user.fname + " " + $user.lname;
+        let i = 0;
+        d.forEach(element => {
+            let $row = $table.insertRow(i);
+
+            let $cell1 = $row.insertCell(0);
+            let $cell2 = $row.insertCell(1);
+
+            $cell1.innerText = element.owner + " diz: ";
+            $cell2.innerText = element.text;
+
+            let logged_user_email = storage.getItem("user_email");
+            if (logged_user_email === element.owner) {
+                let $cell3 = $row.insertCell(2);
+                let $delete_answer_button = document.createElement("BUTTON");
+                $delete_answer_button.innerText = "Deletar resposta";
+                $delete_answer_button.addEventListener("click", () => {
+                    delete_answer(comment, element);
+                });
+                $cell3.appendChild(document.createElement("BR"));
+                $cell3.appendChild($delete_answer_button);
+            }
+        })
+    });
+}
+
+function delete_answer (comment, answer) {
+    fetch (API + "/campaigns/" + comment.campaign + "/comments/" + answer.id, {
+        method:"DELETE",
+        headers: {"Content-Type":"application/json",
+                  "Authorization":"Bearer " + storage.getItem("token")}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        fetch_comment_answers(comment);
+    });
+}
+
+// -=-=-=-=-=- Campaigns donations info -=-=-=-=-=-
+
+function load_donations_history_view_indirectly (url) {
+    fetch (API + "/campaigns/" + url, {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r => {
+        return r.json();
+    })
+    .then (d => {
+        load_donations_history_view (d);
+    });
+}
+
+function load_donations_history_view (campaign) {
+    let $template = document.querySelector("#doante_history_view");
+    $body.innerHTML = $template.innerHTML;
+
+    let $campaign_name = document.querySelector("#campaign_name");
+
+    let $back_button = document.querySelector("#back_button");
+    $back_button.addEventListener("click", () => {
+        load_campaign_view(campaign.url);
+    });
+    $campaign_name.innerText = campaign.name;
+
+    load_donations_history (campaign);
+}
+
+function load_donations_history (campaign) {
+    let $table = document.querySelector("#donations_table");
+    $table.innerText = "";
+    fetch (API + "/campaigns/" + campaign.url + "/donations", {
+        "method":"GET",
+        "headers":{"Content-Type":"application/json"}
+    })
+    .then (r =>{
+        return r.json();
+    })
+    .then (d => {
+        if (d.length === 0) {
+            // TODO
+        } else {
+            let i = 0;
+            d.forEach(element => {
+                let $row = $table.insertRow(i);
+
+                let $cell1 = $row.insertCell(0);
+                let $cell2 = $row.insertCell(1);
+                let $cell3 = $row.insertCell(2);
+                let $cell4 = $row.insertCell(3);
+
+                $cell1.innerText = element.owner;
+                $cell2.innerText = "R$" + element.amount;
+                $cell3.innerText = element.date;
+
+                let $user_button = document.createElement("BUTTON");
+                $user_button.innerText = "Ver página do usuário";
+                $user_button.addEventListener("click", () => {
+                    window.location.hash = "/users/" + element.owner;
+                    init();
+                });
+                $cell4.appendChild($user_button);
+
+                i++;
+            });
         }
     });
-
 }
+
+// ********** End of campaigns functions **********

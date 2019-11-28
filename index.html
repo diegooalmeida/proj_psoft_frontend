@@ -22,6 +22,13 @@
         Rodapé do site<br>
     </footer>
 
+    <template id="logged_view">
+        <h2>Perfil</h2>
+        <p id="hello_message"></p>
+        <button id="load_profile_page_button">Ver página de perfil</button>
+        <button id="logout_button">Desconectar</button>
+    </template>
+
     <template id="not_logged_view">
     <p>
         É novo aqui?
@@ -29,6 +36,39 @@
         Já possui uma conta?
         <button id="sign_in_button">Entrar</button>
     </p>
+    </template>
+
+    <template id="home_view">
+        <h2>Campanhas</h2>
+        <div id="campaigns_options">
+            <button id="create_campaign">Criar nova campanha</button>
+            <button id="list_all_campaigns">Listar todas as campanhas</button>
+        </div>
+
+        <h3>Top 5 campanhas</h3>
+
+        <p>
+            Procurar apenas:
+            <select id="campaigns_filter">
+                <option value="active">Ativas</option>
+                <option value="concluded">Concluídas</option>
+                <option value="expired">Vencidas</option>
+                <option value="all">Todas</option>
+            </select>
+            Ordenar por:
+            <select id="sort_parameter">
+                <option value="likes">Curtidas</option>
+                <option value="deadline">Próximas ao vencimento</option>
+                <option value="donations">Doações</option>
+            </select>
+        </p>
+        <input type="text" id="search_input" placeholder="Procurar uma campanha...">
+        <button id="search_campaigns_button">Procurar</button>
+        <br><br>
+        Campanha Doações Término <br>
+        <table id="top_5_table">
+        </table> 
+
     </template>
 
     <template id="sign_up_view">
@@ -81,22 +121,28 @@
         </div>
     </template>
 
-    <template id="logged_view">
-        <h2>Perfil</h2>
-        <p id="hello_message"></p>
-        <button id="load_profile_page_button">Ver página de perfil</button>
-        <button id="logout_button">Desconectar</button>
+    <template id="create_campaign_view">
+        <h3>Criar nova camapnha</h3>
+        <p>Insira abaixo os dados da nova campanha</p>
+
+        <p>Nome (máximo de 40 caracteres)<br> 
+            <input id="name" type="text" maxlength="40" style="width:250px;">
+            <br>
+            <span id="message_span"></span>
+        </p>
+        <p>Descrição (máximo de 150 caracteres)<br>
+            <textarea id="description" cols="30" rows="4" maxlength="150"></textarea></p>
+        <p>Data de vencimento<br>
+            <input id="deadline" type="text" name="input" placeholder="DD/MM/YYYY"/></p>
+        <p>Meta<br>R$
+            <input id="goal" type="text" placeholder="R$XX,XX" value="0,00"></p>
+        <button id="create_campaign_button">Criar campanha</button>
+        <button id="cancel">Cancelar</button>
     </template>
 
-    <template id="home_view">
-        <h2>Campanhas</h2>
-        <div id="campaigns_options">
-            <button id="create_campaign">Criar nova campanha</button>
-            <button id="list_all_campaigns">Listar todas as campanhas</button>
-        </div>
-
-        <h3>Top 5 campanhas</h3>
-
+    <template id="all_campaigns_view">
+        <h2>Todas as campanhas</h2>
+        <button id="back_button">Voltar à página inicial</button><br>
         <p>
             Procurar apenas:
             <select id="campaigns_filter">
@@ -116,28 +162,18 @@
         <button id="search_campaigns_button">Procurar</button>
         <br><br>
         Campanha Doações Término <br>
-        <table id="top_5_table">
+        <table id="campaigns_table">
         </table> 
-
     </template>
 
-    <template id="create_campaign_view">
-        <h3>Criar nova camapnha</h3>
-        <p>Insira abaixo os dados da nova campanha</p>
-
-        <p>Nome (máximo de 40 caracteres)<br> 
-            <input id="name" type="text" maxlength="40" style="width:250px;">
-            <br>
-            <span id="message_span"></span>
-        </p>
-        <p>Descrição (máximo de 150 caracteres)<br>
-            <textarea id="description" cols="30" rows="4" maxlength="150"></textarea></p>
-        <p>Data de vencimento<br>
-            <input id="deadline" type="text" name="input" placeholder="DD/MM/YYYY"/></p>
-        <p>Meta<br>R$
-            <input id="goal" type="text" placeholder="R$XX,XX" value="0,00"></p>
-        <button id="create_campaign_button">Criar campanha</button>
-        <button id="cancel">Cancelar</button>
+    <template id="filtered_campaigns_view">
+        <h2 id="message_title"></h2>
+        <p id="message_p"></p>
+        <button id="back_button">Voltar</button>
+        <br>
+        <br>
+        <input type="text" id="search_input", placeholder="Refinar busca...">
+        <table id="campaigns_table"></table>
     </template>
 
     <template id="campaign_view">
@@ -219,42 +255,6 @@
 
         <button id="confirm_donate_button">Confirmar doação</button>
         <button id="back_to_campaign_button">Voltar para a página da campanha</button>
-    </template>
-
-    <template id="all_campaigns_view">
-        <h2>Todas as campanhas</h2>
-        <button id="back_button">Voltar à página inicial</button><br>
-        <p>
-            Procurar apenas:
-            <select id="campaigns_filter">
-                <option value="active">Ativas</option>
-                <option value="concluded">Concluídas</option>
-                <option value="expired">Vencidas</option>
-                <option value="all">Todas</option>
-            </select>
-            Ordenar por:
-            <select id="sort_parameter">
-                <option value="likes">Curtidas</option>
-                <option value="deadline">Próximas ao vencimento</option>
-                <option value="donations">Doações</option>
-            </select>
-        </p>
-        <input type="text" id="search_input" placeholder="Procurar uma campanha...">
-        <button id="search_campaigns_button">Procurar</button>
-        <br><br>
-        Campanha Doações Término <br>
-        <table id="campaigns_table">
-        </table> 
-    </template>
-
-    <template id="filtered_campaigns_view">
-        <h2 id="message_title"></h2>
-        <p id="message_p"></p>
-        <button id="back_button">Voltar</button>
-        <br>
-        <br>
-        <input type="text" id="search_input", placeholder="Refinar busca...">
-        <table id="campaigns_table"></table>
     </template>
 
 </body>
