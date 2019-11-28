@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <script type="module" src="app.js"></script>
+    <link rel="stylesheet" href="styles.css">
     <title>AJuDE</title>
 </head>
 <body>
@@ -19,7 +20,17 @@
     <div id="body"></div>
     <hr>
     <footer>
-        Rodapé do site<br>
+        <p>
+            Criado por:
+            <br>
+            <br>
+            Diego Ribeiro de Almeida
+            <br>
+            Iago Tito Oliveira
+            <br>
+            <br>
+            para a cadeira de Projeto de Software (UFCG) 2019.2
+        </p>
     </footer>
 
     <template id="logged_view">
@@ -43,6 +54,7 @@
         <div id="campaigns_options">
             <button id="create_campaign">Criar nova campanha</button>
             <button id="list_all_campaigns">Listar todas as campanhas</button>
+            <p id="message_login_required"></p>
         </div>
 
         <h3>Top 5 campanhas</h3>
@@ -64,7 +76,8 @@
         </p>
         <input type="text" id="search_input" placeholder="Procurar uma campanha...">
         <button id="search_campaigns_button">Procurar</button>
-        <br><br>
+        <p id="message_login_required_2"></p>
+        <br>
         Campanha Doações Término <br>
         <table id="top_5_table">
         </table> 
@@ -75,9 +88,12 @@
         <h2>Cadastro de usuários</h2>
         
         <p>Email<br> <input id="email" type="text"></p>
+        <span id="email_already_exists_message"></span>
         <p>Primeiro nome<br> <input id="fname" type="text"></p>
         <p>Último nome<br> <input id="lname" type="text"></p>
         <p>Senha<br> <input id="password" type="password"></p>
+        <p>Confirmar senha<br> <input id="confirm_password" type="password"></p>
+        <span id="password_dont_match_message"></span>
         <p>Cartão de crédito<br> <input id="credit_card" type="text"></p>
 
         <button id="sign_up">Cadastrar-se</button>
@@ -88,7 +104,10 @@
         <h2>Entrar em AJuDE</h2>
 
         <p>Email<br> <input id="email" type="text"></p>
+        <span id="email_not_found_message"></span>
         <p>Senha<br> <input id="password" type="password"></p>
+        <span id="wrong_password_message"></span>
+        <br>
         <button id="sign_in">Entrar</button>
         <button id="cancel">Cancelar</button>
     </template>
@@ -132,8 +151,12 @@
         </p>
         <p>Descrição (máximo de 150 caracteres)<br>
             <textarea id="description" cols="30" rows="4" maxlength="150"></textarea></p>
-        <p>Data de vencimento<br>
-            <input id="deadline" type="text" name="input" placeholder="DD/MM/YYYY"/></p>
+        <p>
+            Data de vencimento<br>
+            <input id="deadline" type="text" name="input" placeholder="DD/MM/YYYY"/>
+            <br>
+            <span id="invalid_deadline_message"></span>
+        </p>
         <p>Meta<br>R$
             <input id="goal" type="text" placeholder="R$XX,XX" value="0,00"></p>
         <button id="create_campaign_button">Criar campanha</button>

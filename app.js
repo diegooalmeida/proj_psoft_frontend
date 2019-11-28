@@ -5,6 +5,8 @@
 // TODO: resolver bug que a listagem do status "TODAS" está deixando uma campanha de fora.
 
 
+// TODO: exigir login ao clicar no botão de ver campanha no top 5 do home
+
 const API = "https://psoft-ajude-o-grupo-13.herokuapp.com";
 let $top = document.querySelector("#top");
 let $body = document.querySelector("#body");
@@ -78,24 +80,65 @@ function create_campaign_object (name, description, deadline, goal) {
 
 function is_in_the_past (date) {
     let today = new Date();
-    let dd = String(today.getDate()).padStart(2, '0');
-    let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    let yyyy = today.getFullYear();
+    let dd = parseInt(String(today.getDate()).padStart(2, '0'));
+    let mm = parseInt(String(today.getMonth() + 1).padStart(2, '0')); //January is 0!
+    let yyyy = parseInt(today.getFullYear());
 
-    if (parseInt(date.substring(6)) > parseInt(yyyy))
+    let year = parseInt(date.substring(6));
+    let month =  parseInt(date.substring(3,5));
+    let day = parseInt(date.substring(0,2));
+
+    if (year > yyyy)
         return false;
-    else if (parseInt(date.substring(3,5)) > parseInt(mm))
+    else if (month > mm)
         return false;
-    else if (parseInt(date.substring(0,2)) > parseInt(dd))
+    else if (day > dd)
         return false;
     else 
         return true;
+}
+
+function leap_year (year) {
+    if (year % 4 === 0) {
+        if (year % 100 === 0 && year % 400 !== 0) return false
+        else return true;
+    }
+    else return false;
+}
+
+function valid_date (date) {
+    let year = parseInt(date.substring(6));
+    let month =  parseInt(date.substring(3,5));
+    let day = parseInt(date.substring(0,2));
+
+    if (day < 0 || month < 0) return false;
+
+    if (month > 12)
+        return false;
+    if (leap_year(year)) {
+        if (month === 2 && day > 29) 
+            return false;
+    } else {
+        if (month === 2 && day > 28) 
+            return false;
+    }
+    if (month === 1 || month === 3 || month === 5 || month === 7 ||
+        month === 8 || month === 10 || month === 12) {
+        if (day > 31)
+            return false;
+    } else {
+        if (day > 30)
+            return false;
+    }
+    return true;
+
 }
 
 function cancel () {
     $message_div.innerHTML = "";
     window.location.hash === "/home"
     init();
+
 }
 
 // ********** End of auxiliary functions **********
@@ -104,20 +147,9 @@ function cancel () {
 //                     (in the top of the page)
 
 function is_logged () {
-    if (storage.getItem("token") === "null") return false;
-    else return valid_token;
-}
-
-async function valid_token () {
-    fetch(API + "/auth/valid-token", {
-        method:"GET",
-        headers: {"Content-Type":"application/json",
-                    "Authorization":"Bearer " + storage.getItem("token")}
-    })
-    .then (r => r.json())
-    .then (d => {
-        return d;
-    });
+    if (storage.getItem("token") === null || storage.getItem("token") === "null")
+        return false;
+    else return true
 }
 
 function load_logged_view () {
@@ -205,16 +237,26 @@ function load_home_view () {
     let $template = document.querySelector("#home_view");
     $body.innerHTML = $template.innerHTML;
 
+    let $message_login_required = document.querySelector("#message_login_required");
+
     let $create_campaign = document.querySelector("#create_campaign");
     $create_campaign.addEventListener("click", () => {
-        window.location.hash = "/campaigns/create";
-        init();
+        if (is_logged()) {
+            $message_login_required.innerText = "";
+            window.location.hash = "/campaigns/create";
+            init();
+        } else
+            $message_login_required.innerText = "Você precisa estar logado para criar uma campanha.";
     });
 
     let $list_all_campaigns = document.querySelector("#list_all_campaigns");
     $list_all_campaigns.addEventListener("click", () => {
-        window.location.hash = "/campaigns/all";
-        init();
+        if (is_logged()) {
+            $message_login_required.innerText = "";
+            window.location.hash = "/campaigns/all";
+            init();
+        } else 
+            $message_login_required.innerText = "Você precisa estar logado para ver a lista de campanhas.";
     })
 
     let $search_input = document.querySelector("#search_input");
@@ -222,11 +264,18 @@ function load_home_view () {
     let $sort_parameter = document.querySelector("#sort_parameter");
     let $search_campaigns_button = document.querySelector("#search_campaigns_button");
 
+    let $message_login_required_2 = document.querySelector("#message_login_required_2");
+
     fetch_top_5_campaigns($sort_parameter.value, $campaigns_filter.value);
    
     $search_campaigns_button.addEventListener("click", () => {
-        window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
-        load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+        if (is_logged()) {
+            $message_login_required_2.innerText = "";
+            window.location.hash = "/campaigns/filtered-by/" + $sort_parameter.value + "/" + $campaigns_filter.value + "/" +  $search_input.value;
+            load_filtered_campaigns_view($sort_parameter.value, $campaigns_filter.value, $search_input.value);
+        } else {
+            $message_login_required_2.innerText = "Você precisa estar logado para pesquisar uma campanha";
+        }
     });
 
     // aqui podemos não alterar a listagem, pois o usuário pode não estar logado.
@@ -286,6 +335,7 @@ function fetch_top_5_campaigns (sort, status) {
 function load_sign_in_view () {
     let $template = document.querySelector("#sign_in_view");
     $top.innerHTML = $template.innerHTML;
+    $body.innerHTML = "";
 
     let $sign_in = document.querySelector("#sign_in");
     $sign_in.addEventListener("click", sign_in);
@@ -299,6 +349,7 @@ function load_sign_in_view () {
 function load_sign_up_view () {
     let $template = document.querySelector("#sign_up_view");
     $top.innerHTML = $template.innerHTML;
+    $body.innerHTML = "";
 
     let $sign_up = document.querySelector("#sign_up");
     $sign_up.addEventListener("click", sign_up);
@@ -316,6 +367,11 @@ function sign_in () {
     let password = document.querySelector("#password").value;
     let user = create_user_object(email, "", "", password, "");
 
+    let $email_not_found_message = document.querySelector("#email_not_found_message");
+    let $wrong_password_message = document.querySelector("#wrong_password_message");
+
+    let $aux_div = document.querySelector("#aux_div");
+
     fetch (API + "/auth/login", {
         method:"POST",
         headers: {"Content-Type":"application/json"},
@@ -325,12 +381,13 @@ function sign_in () {
         if (r.ok) return r.json();
         else {
             if (r.status === 404) {
-                $message_div.innerText = "Usuário não encontrado.";
-                $message_div.append(document.createElement("hr"));
+                $wrong_password_message.innerText = "";
+                $aux_div.innerHTML = "";
+                $email_not_found_message.innerText = "Usuário não encontrado.";
             }
             else {
-                $message_div.innerText = "Senha inválida.";
-                $message_div.append(document.createElement("hr"));
+                $email_not_found_message.innerText = "";
+                $wrong_password_message.innerText = "Senha inválida.";
             }
         }
     })
@@ -352,37 +409,46 @@ function sign_in () {
 
 function sign_up () {
 
+    let $email_already_exists_message = document.querySelector("#email_already_exists_message");
+    let $password_dont_match_message = document.querySelector("#password_dont_match_message");
     let email = document.querySelector("#email").value;
     let fname = document.querySelector("#fname").value;
     let lname = document.querySelector("#lname").value;
     let password = document.querySelector("#password").value;
+    let confirm_password = document.querySelector("#confirm_password").value;
     let credit_card = document.querySelector("#credit_card").value;
 
     let user = create_user_object(email, fname, lname, password, credit_card);
 
-    fetch(API + "/users", {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body:JSON.stringify(user)
-    })
-    .then(r => {
-        if (r.ok) return r.json();
-        else {
-            $message_div.innerText = "Email já cadastrado, tente novamente";
-            $message_div.append(document.createElement("hr"));
+    if (password !== confirm_password) {
+        $email_already_exists_message.innerText = "";
+        password_dont_match_message.innerText = "As senhas não coincidem";
+    } 
+    else {
+        fetch(API + "/users", {
+            method:"POST",
+            headers: {"Content-Type":"application/json"},
+            body:JSON.stringify(user)
+        })
+        .then(r => {
+            if (r.ok) return r.json();
+            else {
+                password_dont_match_message.innerText = "";
+                $email_already_exists_message.innerText = "Email já cadastrado";
+            }
+        })
+        .then(d => {
+            if (d != undefined) {
+                $message_div.innerText = "Usuário cadastrado com sucesso!";
+                $message_div.append(document.createElement("hr"));
+            setTimeout(_ => {
+                $message_div.innerHTML = "";
+            }, 2000);
+            window.location.hash = "/home";
+            init();
         }
-    })
-    .then(d => {
-        if (d != undefined) {
-            $message_div.innerText = "Usuário cadastrado com sucesso!";
-            $message_div.append(document.createElement("hr"));
-        setTimeout(_ => {
-            $message_div.innerHTML = "";
-        }, 2000);
-        window.location.hash = "/home";
-        init();
+        });
     }
-    });
 }
 
 // ********** End of account functions **********
@@ -513,37 +579,17 @@ function fetch_user_campaigns(email, substring) {
 // ********** Function to create a new campaign **********
 
 function load_create_campaign_view () {
-    if (!is_logged()) {
+    let $template = document.querySelector("#create_campaign_view");
+    $body.innerHTML = $template.innerHTML;
 
-        let $campaigns_options = document.querySelector("#campaigns_options");
-        $campaigns_options.innerHTML = "";
+    let $cancel = document.querySelector("#cancel");
+    $cancel.addEventListener("click", () => {
+        window.location.hash = "/home";
+        cancel();
+    });
 
-        let $p = document.createElement("P");
-        $p.innerText = "Você precisa estar logado para criar uma campanha.";
-
-        let $back_button = document.createElement("BUTTON");
-        $back_button.innerText = "Voltar";
-        $back_button.addEventListener("click", () => {
-            window.location.hash = "/home";
-            init();
-        });
-
-        $campaigns_options.appendChild($p);
-        $campaigns_options.appendChild($back_button);
-    } else {
-
-        let $template = document.querySelector("#create_campaign_view");
-        $body.innerHTML = $template.innerHTML;
-
-        let $cancel = document.querySelector("#cancel");
-        $cancel.addEventListener("click", () => {
-            window.location.hash = "/home";
-            cancel();
-        });
-
-        let $create_campaign_button = document.querySelector("#create_campaign_button")
-        $create_campaign_button.addEventListener("click", create_campaign);
-    }
+    let $create_campaign_button = document.querySelector("#create_campaign_button")
+    $create_campaign_button.addEventListener("click", create_campaign);
 }
 
 // -=-=-=-=-=- Create campaign action -=-=-=-=-=-
@@ -553,11 +599,12 @@ function create_campaign () {
     let description = document.querySelector("#description").value;
     let deadline = document.querySelector("#deadline").value;
     let goal = document.querySelector("#goal").value.replace(',','.').replace(' ','');
+    let $invalid_deadline_message = document.querySelector("#invalid_deadline_message");
 
-    if (deadline.length !== 10 || is_in_the_past(deadline)) {
-        $message_div.innerText = "Data inválida. Escreva uma data no formato dd/mm/yyyy e que ainda não tenha se passado.";
+    if (deadline.length !== 10 || is_in_the_past(deadline) || !valid_date(deadline)) {
+        $invalid_deadline_message.innerText = "Data inválida. Escreva uma data no formato dd/mm/yyyy e que ainda não tenha se passado.";
     } else {
-        $message_div.innerText = "";
+        $invalid_deadline_message.innerText = "";
         let campaign = create_campaign_object(name, description, deadline, goal);
         let $message_span = document.querySelector("#message_span");
         fetch (API + "/campaigns/create", {
@@ -567,6 +614,7 @@ function create_campaign () {
             body: JSON.stringify(campaign)
         })
         .then(r => {
+            // TODO: tratar token expirado
             if (r.status === 403)
                 $message_span.innerText = "Já existe uma campanha com esse nome, tente outro"
             else {
@@ -692,9 +740,13 @@ function fetch_campaigns(sort, status, substring) {
     $table.innerText = "";
     fetch (route, {
         "method":"GET",
-        "headers":{"Content-Type":"application/json"}
+        "headers":{"Content-Type":"application/json",
+                   "Authorization":"Bearer " + storage.getItem("token")}
     })
-    .then (r => r.json())
+    .then (r => {
+        // TODO: tratar token expirado.
+        return r.json();
+    })
     .then (d => {
         $table.innerText = "";
         if (d.length === 0) {
@@ -737,9 +789,11 @@ function load_campaign_view (campaign_url) {
 
     fetch (API + "/campaigns/" + campaign_url, {
         "method":"GET",
-        "headers":{"Content-Type":"application/json"}
+        "headers":{"Content-Type":"application/json",
+                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
+        // todo: tratar token expirado
         if (!r.ok) {
             if (r.status === 404) {
                 $message_div.innerText = "Campanha não encontrada.";
@@ -913,6 +967,7 @@ function donate (url) {
         body:`{"amount":"${amount}"}`
     })
     .then (r => {
+        // todo: tratar token expirado
         //TODO: tratar possíveis erros de not found ou unauthorized
         return r.json();
     })
@@ -929,7 +984,10 @@ function to_like (campaign, $likes, $like_button) {
         headers: {"Content-Type":"application/json",
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
-    .then (r => r.json())
+    .then (r => {
+        // todo: tratar token expirado
+        return r.json();
+    })
     .then (d => {
         $likes.innerText = d.likes.length + " pessoas curtiram esta campanha.";
         if (d.likes.includes(storage.getItem("user_email")))
@@ -949,6 +1007,7 @@ function to_comment (url, text) {
         body:`{"text":"${text}"}`
     })
     .then (r => {
+        //todo: tratar token expirado
         //todo: tratar possíveis erros como 404 para uma camapnha que não existe
         return r.json();
     })
@@ -966,6 +1025,7 @@ function delete_comment (comment) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
+        //todo: tratar token expirado
         return r.json();
     })
     .then (d => {
@@ -1008,6 +1068,7 @@ function to_answer (comment, text) {
         body:`{"text":"${text}"}`
     })
     .then (r => {
+        //todo: tratar token expirado
         return r.json();
     })
     .then (d => {
@@ -1024,6 +1085,7 @@ function fetch_comment_answers (comment) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then(r => {
+        //todo: tratar token expirado
         return r.json()
     })
     .then(d => {
@@ -1059,6 +1121,7 @@ function delete_answer (comment, answer) {
                   "Authorization":"Bearer " + storage.getItem("token")}
     })
     .then (r => {
+        // todo: tratar token expirado
         return r.json();
     })
     .then (d => {
@@ -1103,7 +1166,8 @@ function load_donations_history (campaign) {
         "method":"GET",
         "headers":{"Content-Type":"application/json"}
     })
-    .then (r =>{
+    .then (r => {
+        // todo: trater token expirado
         return r.json();
     })
     .then (d => {
@@ -1138,3 +1202,5 @@ function load_donations_history (campaign) {
 }
 
 // ********** End of campaigns functions **********
+
+// ********** End of the code **********

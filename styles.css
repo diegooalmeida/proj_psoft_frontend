@@ -1,0 +1,31 @@
+#message_login_required {
+    color:red;
+}
+
+#message_login_required_2 {
+    color:red;
+}
+
+#password_dont_match_message {
+    color:red;
+}
+
+#email_already_exists_message {
+    color:red;
+}
+
+#email_not_found_message {
+   color:red;
+}
+
+#wrong_password_message {
+    color:red;
+}
+
+#invalid_deadline_message {
+    color:red;
+}
+
+#message_span {
+    color:red;
+}
