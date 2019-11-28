@@ -141,7 +141,15 @@ function load_login_required_view () {
     $message_div.innerText = "Você precisa estar logado para acessar esta página.";
     $message_div.style.fontSize = "20px";
     $message_div.style.color = "red";
+    let $cancel_button = document.createElement("BUTTON");
+    $cancel_button.addEventListener("click", () => {
+        cancel();
+    });
+    $cancel_button.innerText = "Voltar para a página principal.";
+    $message_div.appendChild(document.createElement("BR"));
+    $message_div.appendChild($cancel_button);
     $message_div.appendChild(document.createElement("HR"));
+
 }
 
 function load_token_expired_view () {
@@ -322,7 +330,7 @@ function load_comments_table (d) {
         })
 }
 
-function load_answers_table (d) {
+function load_answers_table (d, comment) {
     let $table = document.querySelector("#answers_table");
     $table.innerText = "";
     let i = 0;
@@ -1244,7 +1252,7 @@ function fetch_comment_answers (comment) {
     })
     .then(d => {
         if (d !== undefined)
-            load_answers_table(d);
+            load_answers_table(d, comment);
     });
 }
 
